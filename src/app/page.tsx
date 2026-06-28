@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import DepositModal from "@/components/DepositModal";
+import AuthModal from "@/components/AuthModal";
 
 const WalletMultiButtonDynamic = dynamic(
     async () => (await import('@solana/wallet-adapter-react-ui')).WalletMultiButton,
@@ -13,6 +14,8 @@ const WalletMultiButtonDynamic = dynamic(
 
 export default function Home() {
   const [isDepositOpen, setIsDepositOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [authType, setAuthType] = useState<'LOGIN'|'REGISTER'>('LOGIN');
 
   // Mock Casino Games Data
   const games = [
@@ -20,14 +23,14 @@ export default function Home() {
     { id: 2, title: "Dead Cat Bounce", provider: "TRENCH Originals", image: "📉", hot: false, link: "/deep-needle" },
     { id: 3, title: "DCA Strateji Masası", provider: "TRENCH Originals", image: "🤖", hot: true, link: "/deep-needle" },
     { id: 4, title: "Tarihi Makro-Arena", provider: "TRENCH Originals", image: "🏛️", hot: false, link: "/deep-needle" },
-    { id: 5, title: "Sweet Bonanza", provider: "Pragmatic Play", image: "🍬", hot: true, link: "#" },
-    { id: 6, title: "Gates of Olympus", provider: "Pragmatic Play", image: "⚡", hot: true, link: "#" },
-    { id: 7, title: "Aviator", provider: "Spribe", image: "✈️", hot: true, link: "#" },
-    { id: 8, title: "Crazy Time", provider: "Evolution", image: "🎡", hot: false, link: "#" },
-    { id: 9, title: "Lightning Roulette", provider: "Evolution", image: "🌩️", hot: false, link: "#" },
-    { id: 10, title: "Sugar Rush", provider: "Pragmatic Play", image: "🐻", hot: false, link: "#" },
-    { id: 11, title: "Spaceman", provider: "Pragmatic Play", image: "🚀", hot: false, link: "#" },
-    { id: 12, title: "Mega Roulette", provider: "Pragmatic Play", image: "🎰", hot: false, link: "#" },
+    { id: 5, title: "Sweet Bonanza", provider: "Pragmatic Play", image: "🍬", hot: true, link: "/game/sweet-bonanza" },
+    { id: 6, title: "Gates of Olympus", provider: "Pragmatic Play", image: "⚡", hot: true, link: "/game/gates-of-olympus" },
+    { id: 7, title: "Aviator", provider: "Spribe", image: "✈️", hot: true, link: "/game/aviator" },
+    { id: 8, title: "Crazy Time", provider: "Evolution", image: "🎡", hot: false, link: "/game/crazy-time" },
+    { id: 9, title: "Lightning Roulette", provider: "Evolution", image: "🌩️", hot: false, link: "/game/lightning-roulette" },
+    { id: 10, title: "Sugar Rush", provider: "Pragmatic Play", image: "🐻", hot: false, link: "/game/sugar-rush" },
+    { id: 11, title: "Spaceman", provider: "Pragmatic Play", image: "🚀", hot: false, link: "/game/spaceman" },
+    { id: 12, title: "Mega Roulette", provider: "Pragmatic Play", image: "🎰", hot: false, link: "/game/mega-roulette" },
   ];
 
   return (
@@ -56,7 +59,22 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="hidden md:flex items-center gap-4 mr-4">
+          <div className="hidden sm:flex items-center gap-3">
+            <button 
+              onClick={() => { setAuthType('LOGIN'); setIsAuthOpen(true); }}
+              className="text-white hover:text-[#16a34a] font-bold text-sm transition-colors"
+            >
+              GİRİŞ
+            </button>
+            <button 
+              onClick={() => { setAuthType('REGISTER'); setIsAuthOpen(true); }}
+              className="bg-transparent border border-[#16a34a] text-[#16a34a] hover:bg-[#16a34a]/10 px-4 py-2 rounded font-bold text-sm transition-colors"
+            >
+              KAYIT OL
+            </button>
+          </div>
+          
+          <div className="hidden md:flex items-center gap-4 border-l border-white/10 pl-4 ml-2">
             <div className="flex flex-col text-right">
               <span className="text-xs text-gray-500">Bakiye</span>
               <span className="text-sm font-bold text-[#16a34a]">0.00 USD</span>
@@ -67,9 +85,6 @@ export default function Home() {
             >
               PARA YATIR
             </button>
-          </div>
-          <div className="hidden sm:block">
-            <WalletMultiButtonDynamic />
           </div>
         </div>
       </header>
@@ -193,6 +208,7 @@ export default function Home() {
       </div>
 
       <DepositModal isOpen={isDepositOpen} onClose={() => setIsDepositOpen(false)} />
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} type={authType} />
     </div>
   );
 }
