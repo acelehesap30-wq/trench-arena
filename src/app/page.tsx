@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { Activity, Zap, ShieldAlert, Crosshair } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
+import Link from 'next/link';
 
 const WalletMultiButtonDynamic = dynamic(
     async () => (await import('@solana/wallet-adapter-react-ui')).WalletMultiButton,
@@ -66,7 +67,7 @@ export default function Home() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
           
-          <div className="game-card opacity-0 glass-panel p-6 rounded-2xl group cursor-pointer hover:border-blue-500/50 transition-all duration-500 hover:-translate-y-2">
+          <Link href="/deep-needle" className="game-card block opacity-0 glass-panel p-6 rounded-2xl group cursor-pointer hover:border-blue-500/50 transition-all duration-500 hover:-translate-y-2">
             <Crosshair className="w-8 h-8 text-blue-500 mb-4 opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all" />
             <h3 className="text-lg font-bold text-white mb-2 tracking-wide">Deep Needle</h3>
             <p className="text-xs text-gray-500 leading-relaxed">
@@ -76,7 +77,7 @@ export default function Home() {
               <span className="text-[10px] text-blue-400 font-mono">LIVE / SOL-USD</span>
               <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_5px_rgba(59,130,246,0.8)]"></div>
             </div>
-          </div>
+          </Link>
 
           <div className="game-card opacity-0 glass-panel p-6 rounded-2xl group cursor-pointer hover:border-red-500/50 transition-all duration-500 hover:-translate-y-2">
             <Activity className="w-8 h-8 text-red-500 mb-4 opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all" />
