@@ -79,7 +79,7 @@ export default function Home() {
             </div>
           </Link>
 
-          <div className="game-card opacity-0 glass-panel p-6 rounded-2xl group cursor-pointer hover:border-red-500/50 transition-all duration-500 hover:-translate-y-2">
+          <Link href="/deep-needle" className="game-card block opacity-0 glass-panel p-6 rounded-2xl group cursor-pointer hover:border-red-500/50 transition-all duration-500 hover:-translate-y-2">
             <Activity className="w-8 h-8 text-red-500 mb-4 opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all" />
             <h3 className="text-lg font-bold text-white mb-2 tracking-wide">Dead Cat Bounce</h3>
             <p className="text-xs text-gray-500 leading-relaxed">
@@ -89,9 +89,9 @@ export default function Home() {
               <span className="text-[10px] text-red-400 font-mono">HIGH VOLATILITY</span>
               <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.8)]"></div>
             </div>
-          </div>
+          </Link>
 
-          <div className="game-card opacity-0 glass-panel p-6 rounded-2xl group cursor-pointer hover:border-amber-500/50 transition-all duration-500 hover:-translate-y-2">
+          <Link href="/deep-needle" className="game-card block opacity-0 glass-panel p-6 rounded-2xl group cursor-pointer hover:border-amber-500/50 transition-all duration-500 hover:-translate-y-2">
             <Zap className="w-8 h-8 text-amber-500 mb-4 opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all" />
             <h3 className="text-lg font-bold text-white mb-2 tracking-wide">DCA Strateji Masası</h3>
             <p className="text-xs text-gray-500 leading-relaxed">
@@ -101,9 +101,9 @@ export default function Home() {
               <span className="text-[10px] text-amber-400 font-mono">AUTONOMOUS</span>
               <div className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_5px_rgba(245,158,11,0.8)]"></div>
             </div>
-          </div>
+          </Link>
 
-          <div className="game-card opacity-0 glass-panel p-6 rounded-2xl group cursor-pointer hover:border-purple-500/50 transition-all duration-500 hover:-translate-y-2">
+          <Link href="/deep-needle" className="game-card block opacity-0 glass-panel p-6 rounded-2xl group cursor-pointer hover:border-purple-500/50 transition-all duration-500 hover:-translate-y-2">
             <ShieldAlert className="w-8 h-8 text-purple-500 mb-4 opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all" />
             <h3 className="text-lg font-bold text-white mb-2 tracking-wide">Tarihi Makro-Arena</h3>
             <p className="text-xs text-gray-500 leading-relaxed">
@@ -113,7 +113,7 @@ export default function Home() {
               <span className="text-[10px] text-purple-400 font-mono">SIMULATION</span>
               <div className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_5px_rgba(168,85,247,0.8)]"></div>
             </div>
-          </div>
+          </Link>
 
         </div>
       </div>

@@ -1,20 +1,28 @@
 "use client";
 
 import { usePythPrice } from "@/hooks/usePythPrice";
-import { ArrowLeft, Zap, Crosshair, Wallet, TrendingDown, Activity, AlertTriangle, Loader2 } from "lucide-react";
+import { ArrowLeft, Zap, Crosshair, Wallet, Activity, AlertTriangle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { supabase } from "@/lib/supabase";
-import LiveChart from "@/components/LiveChart";
-import LiquidationFeed from "@/components/LiquidationFeed";
+import TradingViewChart from "@/components/TradingViewChart";
+import OrderBook from "@/components/OrderBook";
+import PositionsTable from "@/components/PositionsTable";
 import { createBetTransaction } from "@/utils/solana";
+import dynamic from "next/dynamic";
 
-export default function DeepNeedlePage() {
+const WalletMultiButtonDynamic = dynamic(
+    async () => (await import('@solana/wallet-adapter-react-ui')).WalletMultiButton,
+    { ssr: false }
+);
+
+export default function DeepNeedleTerminal() {
     const { price, trend } = usePythPrice();
+    const [orderType, setOrderType] = useState<'LIMIT' | 'MARKET' | 'STOP'>('LIMIT');
     const [amount, setAmount] = useState("0.1");
     const [targetDrop, setTargetDrop] = useState("5"); 
-    const [leverage, setLeverage] = useState("1");
+    const [leverage, setLeverage] = useState("10");
     
     // Web3 State
     const { connection } = useConnection();
@@ -24,7 +32,7 @@ export default function DeepNeedlePage() {
 
     const handleExecute = async () => {
         if (!connected || !publicKey) {
-            alert("Lütfen önce sağ üstten Phantom cüzdanınızı bağlayın!");
+            alert("Lütfen önce cüzdanınızı bağlayın!");
             return;
         }
 
@@ -37,13 +45,9 @@ export default function DeepNeedlePage() {
             setIsProcessing(true);
             setTxHash(null);
 
-            // 1. İşlem Oluşturma (Transfer Instruction)
             const transaction = await createBetTransaction(connection, publicKey, parseFloat(amount));
-            
-            // 2. Cüzdan ile İmzalama ve Ağa Gönderme
             const signature = await sendTransaction(transaction, connection);
             
-            // 3. Solana Ağında Onay (Confirmation) Bekleme
             const latestBlockhash = await connection.getLatestBlockhash();
             await connection.confirmTransaction({
                 signature,
@@ -53,7 +57,6 @@ export default function DeepNeedlePage() {
 
             setTxHash(signature);
 
-            // 4. Veritabanına Başarılı Kayıt
             const { error } = await supabase
                 .from('bets')
                 .insert([
@@ -74,7 +77,7 @@ export default function DeepNeedlePage() {
             if (error?.message?.includes("User rejected")) {
                 alert("İşlem cüzdandan reddedildi.");
             } else if (error?.message?.includes("insufficient lamports")) {
-                alert("Devnet cüzdanınızda yeterli bakiye (SOL) yok! (Solana Faucet üzerinden test SOL alın)");
+                alert("Devnet cüzdanınızda yeterli bakiye (SOL) yok!");
             } else {
                 alert("İşlem başarısız oldu. Logları kontrol edin.");
             }
@@ -84,175 +87,212 @@ export default function DeepNeedlePage() {
     };
 
     return (
-        <main className="min-h-screen flex flex-col relative overflow-hidden bg-[#050505] text-white p-4 md:p-6 pt-24 font-sans">
+        <main className="min-h-screen flex flex-col bg-[#0b0e11] text-gray-300 font-sans text-sm selection:bg-blue-900 overflow-x-hidden">
             
-            {/* Top Navigation */}
-            <div className="max-w-[1600px] mx-auto w-full mb-6 z-10 flex justify-between items-center">
-                <Link href="/" className="inline-flex items-center gap-2 text-gray-500 hover:text-white transition-colors">
-                    <ArrowLeft className="w-5 h-5" />
-                    <span className="tracking-widest font-mono text-xs uppercase">Terminalden Çık</span>
-                </Link>
-                <div className="flex gap-4">
-                    <div className="glass-panel px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-mono text-green-400">
-                        <Activity className="w-4 h-4" /> 24H VOL: $1.2B
+            {/* Top Navigation Bar */}
+            <nav className="h-14 bg-[#181a20] border-b border-white/5 flex items-center justify-between px-4 z-20">
+                <div className="flex items-center gap-6">
+                    <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+                        <ArrowLeft className="w-4 h-4" />
+                        <span className="font-bold tracking-widest text-white">TRENCH</span>
+                    </Link>
+                    
+                    <div className="hidden md:flex items-center gap-6 text-xs font-mono font-bold">
+                        <span className="text-white">DEEP NEEDLE</span>
+                        <Link href="/" className="text-gray-500 hover:text-white transition-colors">DEAD CAT BOUNCE</Link>
+                        <Link href="/" className="text-gray-500 hover:text-white transition-colors">DCA MASASI</Link>
                     </div>
-                    <div className="glass-panel px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-mono text-amber-400">
-                        <AlertTriangle className="w-4 h-4" /> DEVNET MODE
+                </div>
+
+                <div className="flex items-center gap-4">
+                    <div className="hidden lg:flex gap-4">
+                        <div className="px-3 py-1 bg-white/5 rounded flex items-center gap-2 text-xs font-mono text-green-400">
+                            <Activity className="w-3 h-3" /> VOL: $1.2B
+                        </div>
+                        <div className="px-3 py-1 bg-amber-500/10 text-amber-500 rounded flex items-center gap-2 text-xs font-mono">
+                            <AlertTriangle className="w-3 h-3" /> DEVNET
+                        </div>
+                    </div>
+                    <WalletMultiButtonDynamic />
+                </div>
+            </nav>
+
+            {/* Trading Ticker Tape */}
+            <div className="h-16 border-b border-white/5 bg-[#181a20] flex items-center px-6 gap-8 z-10 shrink-0">
+                <div className="flex items-center gap-4">
+                    <div className="flex flex-col">
+                        <span className="text-xl font-bold text-white flex items-center gap-2">
+                            SOL/USD
+                            {trend === 'up' && <span className="text-sm text-green-500">▲</span>}
+                            {trend === 'down' && <span className="text-sm text-red-500">▼</span>}
+                        </span>
+                        <a href="https://pyth.network" target="_blank" className="text-[10px] text-blue-400 font-mono underline hover:text-blue-300">Pyth Oracle</a>
+                    </div>
+                </div>
+                
+                <div className="flex items-center gap-8">
+                    <div className="flex flex-col font-mono text-xs">
+                        <span className="text-gray-500">Anlık Fiyat</span>
+                        <span className={`text-lg font-bold ${trend === 'up' ? 'text-green-500' : trend === 'down' ? 'text-red-500' : 'text-white'}`}>
+                            {price ? `$${price}` : '...'}
+                        </span>
+                    </div>
+                    <div className="flex flex-col font-mono text-xs">
+                        <span className="text-gray-500">24s Değişim</span>
+                        <span className="text-green-500 font-bold">+2.45%</span>
+                    </div>
+                    <div className="hidden sm:flex flex-col font-mono text-xs">
+                        <span className="text-gray-500">24s En Yüksek</span>
+                        <span className="text-white font-bold">$154.20</span>
+                    </div>
+                    <div className="hidden md:flex flex-col font-mono text-xs">
+                        <span className="text-gray-500">24s En Düşük</span>
+                        <span className="text-white font-bold">$138.50</span>
+                    </div>
+                    <div className="hidden lg:flex flex-col font-mono text-xs">
+                        <span className="text-gray-500">Fonlama (Funding)</span>
+                        <span className="text-amber-500 font-bold">0.0150%</span>
                     </div>
                 </div>
             </div>
 
-            {/* 3-Column Terminal Layout */}
-            <div className="max-w-[1600px] mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6 z-10 flex-1 min-h-[700px]">
+            {/* 4-Zone Pro Terminal Layout */}
+            <div className="flex-1 flex flex-col xl:flex-row overflow-hidden">
                 
-                {/* Column 1: Market Stats & Live Chart (Spans 8 cols) */}
-                <div className="lg:col-span-8 flex flex-col gap-6">
-                    {/* Header Stats */}
-                    <div className="glass-panel p-6 rounded-2xl flex justify-between items-center relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-blue-500/5 group-hover:bg-blue-500/10 transition-colors"></div>
-                        
-                        <div className="flex flex-col z-10">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Zap className="w-4 h-4 text-blue-400 animate-pulse" />
-                                <span className="font-mono text-xs tracking-widest text-gray-400">PYTH ORACLE - SOL/USD</span>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <span className="text-4xl md:text-6xl font-black tracking-tighter">
-                                    {price === null ? "..." : `$${price}`}
-                                </span>
-                                {trend === 'up' && <TrendingDown className="w-8 h-8 text-blue-500 rotate-180" />}
-                                {trend === 'down' && <TrendingDown className="w-8 h-8 text-red-500" />}
-                            </div>
-                        </div>
+                {/* Left: Orderbook (Spans ~250px) */}
+                <div className="hidden lg:flex flex-col w-[250px] border-r border-white/5 bg-[#181a20] p-2 overflow-hidden shrink-0">
+                    <OrderBook currentPrice={price} />
+                </div>
 
-                        <div className="hidden md:flex gap-8 text-right z-10">
-                            <div className="flex flex-col">
-                                <span className="text-xs text-gray-500 font-mono mb-1">FUNDING RATE</span>
-                                <span className="text-sm font-bold text-green-400">+0.0150%</span>
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-xs text-gray-500 font-mono mb-1">24H HIGH</span>
-                                <span className="text-sm font-bold">$154.20</span>
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-xs text-gray-500 font-mono mb-1">24H LOW</span>
-                                <span className="text-sm font-bold">$138.50</span>
-                            </div>
-                        </div>
+                {/* Middle: Chart + Positions (Flexible width) */}
+                <div className="flex-1 flex flex-col min-w-0">
+                    {/* Top: TradingView Chart */}
+                    <div className="flex-1 min-h-[400px] border-b border-white/5 bg-[#0b0e11] p-1 relative">
+                        <TradingViewChart currentPrice={price} />
                     </div>
-
-                    {/* Live Chart Panel */}
-                    <div className="glass-panel p-6 rounded-2xl flex-1 relative flex flex-col">
-                        <div className="absolute top-6 left-6 z-10 flex items-center gap-2 text-xs font-mono">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div> <span>LIVE PRICE</span>
-                            <div className="w-2 h-2 bg-red-500 rounded-full ml-4"></div> <span>TARGET DROP</span>
-                        </div>
-                        <LiveChart currentPrice={price} targetDropPercent={targetDrop} />
+                    
+                    {/* Bottom: Positions Table (Spans ~300px height) */}
+                    <div className="h-[300px] bg-[#181a20] p-4 overflow-hidden">
+                        <PositionsTable currentPrice={price} />
                     </div>
                 </div>
 
-                {/* Column 2: Order Book & Liquidation (Spans 4 cols) */}
-                <div className="lg:col-span-4 flex flex-col gap-6">
+                {/* Right: Order Entry Panel (Spans ~320px) */}
+                <div className="w-full xl:w-[320px] border-l border-white/5 bg-[#181a20] p-4 flex flex-col overflow-y-auto shrink-0">
                     
-                    {/* Execution Form */}
-                    <div className="glass-panel p-6 rounded-2xl flex flex-col gap-6 relative overflow-hidden group">
-                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-blue-400 to-transparent"></div>
-                        
-                        <div className="flex items-center gap-3">
-                            <Crosshair className="w-5 h-5 text-blue-400" />
-                            <h3 className="text-lg font-bold tracking-widest text-white">DEEP NEEDLE GİRİŞİ</h3>
-                        </div>
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-white font-bold tracking-widest flex items-center gap-2">
+                            <Crosshair className="w-4 h-4 text-blue-500" /> DEEP NEEDLE
+                        </h2>
+                    </div>
 
-                        <div className="space-y-5">
-                            {/* Amount */}
-                            <div className="flex flex-col gap-2">
-                                <div className="flex justify-between items-center text-xs font-mono text-gray-400">
-                                    <label>RİSK MİKTARI (SOL)</label>
-                                </div>
-                                <div className="relative">
-                                    <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                                    <input 
-                                        type="number" 
-                                        value={amount}
-                                        step="0.1"
-                                        onChange={(e) => setAmount(e.target.value)}
-                                        className="w-full bg-[#0a0a0a] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white font-mono focus:outline-none focus:border-blue-500/50 transition-colors"
-                                        disabled={isProcessing}
-                                    />
-                                </div>
+                    {/* Order Type Tabs */}
+                    <div className="flex bg-[#0b0e11] p-1 rounded-md mb-6 font-mono text-xs">
+                        {['LIMIT', 'MARKET', 'STOP'].map(type => (
+                            <button 
+                                key={type}
+                                onClick={() => setOrderType(type as any)}
+                                className={`flex-1 py-1.5 rounded text-center transition-colors ${orderType === type ? 'bg-white/10 text-white font-bold' : 'text-gray-500 hover:text-white'}`}
+                            >
+                                {type}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="space-y-4 flex-1">
+                        {/* Amount Input */}
+                        <div className="flex flex-col gap-1">
+                            <div className="flex justify-between text-xs text-gray-500 font-mono">
+                                <label>Risk (SOL)</label>
+                                <span>Bakiye: --</span>
                             </div>
-
-                            {/* Leverage */}
-                            <div className="flex flex-col gap-2">
-                                <label className="text-xs text-gray-400 font-mono">KALDIRAÇ (LEVERAGE)</label>
-                                <div className="flex gap-2">
-                                    {['1', '2', '5', '10', '25'].map(x => (
-                                        <button 
-                                            key={x}
-                                            onClick={() => setLeverage(x)}
-                                            disabled={isProcessing}
-                                            className={`flex-1 py-2 rounded-lg text-xs font-mono border transition-all ${leverage === x ? 'bg-blue-500/20 border-blue-500 text-blue-400' : 'bg-[#0a0a0a] border-white/10 text-gray-500 hover:border-white/30'}`}
-                                        >
-                                            {x}x
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Target Drop */}
-                            <div className="flex flex-col gap-2">
-                                <div className="flex justify-between items-center">
-                                    <label className="text-xs text-gray-400 font-mono">HEDEF ÇÖKÜŞ ORANI</label>
-                                    <span className="text-red-400 font-mono font-bold">-%{targetDrop} DROP</span>
-                                </div>
+                            <div className="flex items-center bg-[#0b0e11] border border-white/5 rounded-md focus-within:border-blue-500/50 transition-colors">
                                 <input 
-                                    type="range" 
-                                    min="1" 
-                                    max="50" 
-                                    value={targetDrop}
-                                    onChange={(e) => setTargetDrop(e.target.value)}
-                                    className="w-full accent-blue-500"
+                                    type="number" 
+                                    value={amount}
+                                    step="0.1"
+                                    onChange={(e) => setAmount(e.target.value)}
+                                    className="w-full bg-transparent text-white font-mono p-2 text-right outline-none"
                                     disabled={isProcessing}
                                 />
-                                <div className="text-[10px] text-gray-500 font-mono flex justify-between">
-                                    <span>Safe</span>
-                                    <span>Degen</span>
-                                </div>
+                                <span className="text-xs text-gray-500 font-mono pr-3 pl-2">SOL</span>
                             </div>
                         </div>
 
-                        {/* Execute Button */}
-                        <div className="mt-2">
-                            <button 
-                                onClick={handleExecute}
+                        {/* Leverage Buttons */}
+                        <div className="flex flex-col gap-1">
+                            <label className="text-xs text-gray-500 font-mono">Kaldıraç</label>
+                            <div className="flex gap-1 font-mono text-xs">
+                                {['1', '5', '10', '25', '50'].map(x => (
+                                    <button 
+                                        key={x}
+                                        onClick={() => setLeverage(x)}
+                                        disabled={isProcessing}
+                                        className={`flex-1 py-1.5 rounded transition-all ${leverage === x ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50' : 'bg-[#0b0e11] border border-white/5 text-gray-500 hover:border-white/20'}`}
+                                    >
+                                        {x}x
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Target Drop Slider */}
+                        <div className="flex flex-col gap-2 pt-2">
+                            <div className="flex justify-between items-center text-xs font-mono">
+                                <label className="text-gray-500">Çöküş Hedefi</label>
+                                <span className="text-red-400 font-bold">-%{targetDrop} DROP</span>
+                            </div>
+                            <input 
+                                type="range" min="1" max="50" 
+                                value={targetDrop}
+                                onChange={(e) => setTargetDrop(e.target.value)}
+                                className="w-full accent-blue-500"
                                 disabled={isProcessing}
-                                className={`w-full relative overflow-hidden group font-bold tracking-widest py-4 rounded-xl transition-all ${isProcessing ? 'bg-blue-900 text-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(59,130,246,0.6)] active:scale-95'}`}
-                            >
-                                {!isProcessing && (
-                                    <div className="absolute inset-0 w-full h-full bg-[linear-gradient(to_right,transparent,rgba(255,255,255,0.2),transparent)] -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
-                                )}
-                                <div className="flex items-center justify-center gap-2">
-                                    {isProcessing && <Loader2 className="w-5 h-5 animate-spin" />}
-                                    {isProcessing ? "İŞLEM ONAYLANIRKEN BEKLEYİN..." : "İĞNEYİ KUR"}
-                                </div>
-                            </button>
+                            />
                         </div>
 
-                        {/* Success Message */}
-                        {txHash && (
-                            <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-xs font-mono text-green-400 break-all text-center">
-                                İŞLEM BAŞARILI!<br/>
-                                <a href={`https://explorer.solana.com/tx/${txHash}?cluster=devnet`} target="_blank" rel="noreferrer" className="underline hover:text-green-300">
-                                    TxHash: {txHash.substring(0,20)}...
-                                </a>
+                        {/* Order Summary Stats */}
+                        <div className="bg-[#0b0e11] p-3 rounded-md border border-white/5 space-y-2 text-xs font-mono mt-4">
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">Maliyet</span>
+                                <span className="text-white">{amount} SOL</span>
                             </div>
-                        )}
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">Nominal Pozisyon</span>
+                                <span className="text-white">{(parseFloat(amount) * parseInt(leverage)).toFixed(2)} SOL</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">Tetikleme Fiyatı</span>
+                                <span className="text-amber-400">
+                                    ${(parseFloat(price || "0") * (1 - parseFloat(targetDrop)/100)).toFixed(2)}
+                                </span>
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Liquidation Feed Panel */}
-                    <div className="glass-panel p-4 rounded-2xl flex-1 flex flex-col relative overflow-hidden">
-                        <LiquidationFeed />
+                    {/* Execute Button */}
+                    <div className="mt-4 shrink-0">
+                        <button 
+                            onClick={handleExecute}
+                            disabled={isProcessing}
+                            className={`w-full font-bold tracking-widest py-3 rounded text-sm transition-all shadow-[0_0_15px_rgba(37,99,235,0.15)] hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] active:scale-[0.98] ${isProcessing ? 'bg-blue-900/50 text-blue-500 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
+                        >
+                            <div className="flex items-center justify-center gap-2">
+                                {isProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
+                                {isProcessing ? "ONAY BEKLENİYOR" : "LONG DEEP NEEDLE"}
+                            </div>
+                        </button>
                     </div>
+
+                    {/* Success Feedback */}
+                    {txHash && (
+                        <div className="mt-4 p-2 bg-green-500/10 border border-green-500/20 rounded text-[10px] font-mono text-green-400 break-all text-center">
+                            EMİR AĞA İLETİLDİ!<br/>
+                            <a href={`https://explorer.solana.com/tx/${txHash}?cluster=devnet`} target="_blank" rel="noreferrer" className="underline hover:text-green-300">
+                                TxHash: {txHash.substring(0,16)}...
+                            </a>
+                        </div>
+                    )}
 
                 </div>
             </div>

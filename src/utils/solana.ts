@@ -2,7 +2,7 @@ import { Connection, PublicKey, SystemProgram, Transaction } from '@solana/web3.
 
 // The House Vault - This is a mock address for Devnet testing.
 // In production, this would be a PDA (Program Derived Address) of your Anchor Program.
-export const HOUSE_VAULT_ADDRESS = new PublicKey("HousedesignedMockVault1111111111111111111111");
+export const HOUSE_VAULT_ADDRESS = new PublicKey("11111111111111111111111111111111");
 
 /**
  * Creates a transaction to transfer SOL from user to the House vault.
