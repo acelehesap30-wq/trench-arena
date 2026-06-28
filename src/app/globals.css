@@ -1,63 +1,119 @@
 @import "tailwindcss";
 
 @theme inline {
-  --background: 0 0% 8%; /* Koyu Gri / Siyah Zemin (Casino Tarzı) */
+  --background: 0 0% 5%; /* Extremely dark background */
   --foreground: 0 0% 95%;
-  --brand-green: 142 71% 45%; /* Setrabet tarzı canlı yeşil */
-  --brand-dark: 240 10% 12%; /* Kart Arkaplanları */
-  --glass-bg: rgba(20, 20, 20, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.05);
+  --brand-green: 142 76% 36%; /* Premium Emerald Green */
+  --brand-dark: 240 10% 9%; /* Sleek dark gray for cards */
+  --glass-bg: rgba(10, 10, 10, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.03);
 }
 
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family: 'Inter', sans-serif;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(22, 163, 74, 0.05) 0%, transparent 70%),
+    radial-gradient(circle at 100% 100%, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+  background-attachment: fixed;
 }
 
-/* Lüks Casino Kartları */
+/* Premium Glassmorphism */
+.glass-premium {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Casino Card Premium */
 .casino-card {
   background: hsl(var(--brand-dark));
-  border: 1px solid var(--glass-border);
-  transition: all 0.3s ease;
-  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.02);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border-radius: 16px;
   overflow: hidden;
+  position: relative;
+}
+.casino-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 16px;
+  padding: 2px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease;
 }
 .casino-card:hover {
-  transform: translateY(-4px);
-  border-color: hsl(var(--brand-green) / 0.5);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px hsl(var(--brand-green) / 0.2);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(22, 163, 74, 0.15);
+}
+.casino-card:hover::before {
+  opacity: 1;
 }
 
-/* Casino Butonu */
-.btn-casino {
-  background-color: hsl(var(--brand-green));
+/* Button Premium */
+.btn-premium {
+  background: linear-gradient(135deg, hsl(var(--brand-green)), #15803d);
   color: white;
-  font-weight: bold;
-  border-radius: 6px;
-  transition: all 0.2s ease;
+  font-weight: 800;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
-.btn-casino:hover {
-  background-color: hsl(var(--brand-green) / 0.8);
-  box-shadow: 0 0 15px hsl(var(--brand-green) / 0.4);
+.btn-premium::after {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%; width: 200%; height: 200%;
+  background: linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent);
+  transform: rotate(45deg);
+  transition: all 0.3s ease;
+  opacity: 0;
+}
+.btn-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(22, 163, 74, 0.4);
+}
+.btn-premium:hover::after {
+  animation: shine 1.5s infinite;
+  opacity: 1;
 }
 
-/* Shimmer Animation */
-@keyframes shimmer {
-  100% {
-    transform: translateX(100%);
-  }
+@keyframes shine {
+  0% { left: -100%; top: -100%; }
+  100% { left: 100%; top: 100%; }
+}
+
+/* Hero Gradient Text */
+.text-gradient {
+  background: linear-gradient(to right, #fff, #a3a3a3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.text-gradient-green {
+  background: linear-gradient(to right, #4ade80, #16a34a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #111;
+  background: #0a0a0a;
 }
 ::-webkit-scrollbar-thumb {
-  background: #333;
+  background: #222;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
