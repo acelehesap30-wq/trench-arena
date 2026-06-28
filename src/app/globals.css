@@ -1,44 +1,45 @@
 @import "tailwindcss";
 
 @theme inline {
-  --background: 0 0% 0%;
+  --background: 0 0% 8%; /* Koyu Gri / Siyah Zemin (Casino Tarzı) */
   --foreground: 0 0% 95%;
-  --neon-blue: 214 100% 50%;
-  --neon-red: 350 100% 50%;
-  --neon-gold: 45 100% 50%;
-  --glass-bg: rgba(15, 15, 15, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.08);
+  --brand-green: 142 71% 45%; /* Setrabet tarzı canlı yeşil */
+  --brand-dark: 240 10% 12%; /* Kart Arkaplanları */
+  --glass-bg: rgba(20, 20, 20, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.05);
 }
 
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  background-image: 
-    radial-gradient(circle at 15% 50%, rgba(0, 102, 255, 0.04) 0%, transparent 50%),
-    radial-gradient(circle at 85% 30%, rgba(255, 0, 51, 0.03) 0%, transparent 50%);
   font-family: 'Inter', sans-serif;
 }
 
-/* Glassmorphism Sınıfı */
-.glass-panel {
-  background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+/* Lüks Casino Kartları */
+.casino-card {
+  background: hsl(var(--brand-dark));
   border: 1px solid var(--glass-border);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.casino-card:hover {
+  transform: translateY(-4px);
+  border-color: hsl(var(--brand-green) / 0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px hsl(var(--brand-green) / 0.2);
 }
 
-/* Wallet Adapter CSS Override */
-.wallet-adapter-button-trigger {
-  background: rgba(15, 15, 15, 0.8) !important;
-  border: 1px solid var(--glass-border) !important;
-  transition: all 0.3s ease !important;
-  border-radius: 8px !important;
+/* Casino Butonu */
+.btn-casino {
+  background-color: hsl(var(--brand-green));
+  color: white;
+  font-weight: bold;
+  border-radius: 6px;
+  transition: all 0.2s ease;
 }
-.wallet-adapter-button-trigger:hover {
-  background: rgba(30, 30, 30, 0.9) !important;
-  border-color: hsl(var(--neon-gold) / 0.5) !important;
-  box-shadow: 0 0 15px hsl(var(--neon-gold) / 0.2) !important;
+.btn-casino:hover {
+  background-color: hsl(var(--brand-green) / 0.8);
+  box-shadow: 0 0 15px hsl(var(--brand-green) / 0.4);
 }
 
 /* Shimmer Animation */
@@ -48,18 +49,17 @@ body {
   }
 }
 
-/* Custom Scrollbar for Terminals */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
 }
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
+::-webkit-scrollbar-track {
+  background: #111;
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
   border-radius: 4px;
 }
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--brand-green));
 }
