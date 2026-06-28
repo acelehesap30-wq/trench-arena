@@ -5,19 +5,40 @@ import { ArrowLeft, Zap, Crosshair, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { supabase } from "@/lib/supabase";
 
 export default function DeepNeedlePage() {
     const { price, trend } = usePythPrice();
     const [amount, setAmount] = useState("1.0");
     const [targetDrop, setTargetDrop] = useState("5"); // percentage drop
-    const { connected } = useWallet();
+    const { connected, publicKey } = useWallet();
 
-    const handleExecute = () => {
-        if (!connected) {
+    const handleExecute = async () => {
+        if (!connected || !publicKey) {
             alert("Lütfen önce sağ üstten cüzdanınızı bağlayın!");
             return;
         }
-        alert(`${amount} SOL ile %${targetDrop} çöküşüne (Deep Needle) limit emir girildi! (Akıllı kontrat aşamasında aktif olacak)`);
+        
+        try {
+            const { error } = await supabase
+                .from('bets')
+                .insert([
+                    { 
+                        wallet_address: publicKey.toBase58(),
+                        game_type: 'DEEP_NEEDLE',
+                        amount_sol: parseFloat(amount),
+                        target_drop_percent: parseFloat(targetDrop),
+                        entry_price: parseFloat(price || "0")
+                    }
+                ]);
+
+            if (error) throw error;
+            
+            alert(`${amount} SOL ile %${targetDrop} çöküşüne (Deep Needle) limit emir Supabase veritabanına kaydedildi!`);
+        } catch (error: any) {
+            console.error("Supabase Error:", error.message);
+            alert("Kayıt başarısız oldu. Supabase anahtarlarınızı (.env) kontrol edin.");
+        }
     };
 
     return (
