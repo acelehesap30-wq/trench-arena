@@ -28,7 +28,7 @@ body {
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
 }
 
-/* Wallet Adapter CSS Override (Siyah temaya uydurmak için) */
+/* Wallet Adapter CSS Override */
 .wallet-adapter-button-trigger {
   background: rgba(15, 15, 15, 0.8) !important;
   border: 1px solid var(--glass-border) !important;
@@ -39,4 +39,27 @@ body {
   background: rgba(30, 30, 30, 0.9) !important;
   border-color: hsl(var(--neon-gold) / 0.5) !important;
   box-shadow: 0 0 15px hsl(var(--neon-gold) / 0.2) !important;
+}
+
+/* Shimmer Animation */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Custom Scrollbar for Terminals */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
