@@ -19,7 +19,7 @@ export default function CrashGame() {
   const [history, setHistory] = useState<number[]>([1.23, 4.56, 1.05, 12.30, 2.15]);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
   const startTimeRef = useRef<number>(0);
   const crashPointRef = useRef<number>(1.00);
 
