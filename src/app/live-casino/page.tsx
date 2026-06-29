@@ -35,6 +35,7 @@ export default function LiveCasinoPage() {
           setLiveGames(formatted);
         } else {
           setLiveGames([
+            { id: 99, title: "Trench Crash (Originals)", provider: "Trench", category: "ORIGINALS", image: "https://images.unsplash.com/photo-1639762681485-074b7f4ec139?q=80&w=600", players: 9850, minBet: "$1.00", hot: true, slug: "crash" },
             { id: 1, title: "Lightning Roulette", provider: "Evolution", category: "ROULETTE", image: "https://images.unsplash.com/photo-1605901309584-818e25960b8f?q=80&w=600", players: 1420, minBet: "$0.20", hot: true },
             { id: 2, title: "Crazy Time", provider: "Evolution", category: "GAME SHOWS", image: "https://images.unsplash.com/photo-1596838132731-3301c3fd4317?q=80&w=600", players: 3850, minBet: "$0.10", hot: true },
             { id: 3, title: "Infinite Blackjack", provider: "Evolution", category: "BLACKJACK", image: "https://images.unsplash.com/photo-1511516805178-06bbddab960e?q=80&w=600", players: 850, minBet: "$1.00", hot: false },
@@ -48,6 +49,7 @@ export default function LiveCasinoPage() {
       } catch (err) {
         console.error("Supabase Error:", err);
         setLiveGames([
+            { id: 99, title: "Trench Crash (Originals)", provider: "Trench", category: "ORIGINALS", image: "https://images.unsplash.com/photo-1639762681485-074b7f4ec139?q=80&w=600", players: 9850, minBet: "$1.00", hot: true, slug: "crash" },
             { id: 1, title: "Lightning Roulette", provider: "Evolution", category: "ROULETTE", image: "https://images.unsplash.com/photo-1605901309584-818e25960b8f?q=80&w=600", players: 1420, minBet: "$0.20", hot: true },
             { id: 2, title: "Crazy Time", provider: "Evolution", category: "GAME SHOWS", image: "https://images.unsplash.com/photo-1596838132731-3301c3fd4317?q=80&w=600", players: 3850, minBet: "$0.10", hot: true },
             { id: 3, title: "Infinite Blackjack", provider: "Evolution", category: "BLACKJACK", image: "https://images.unsplash.com/photo-1511516805178-06bbddab960e?q=80&w=600", players: 850, minBet: "$1.00", hot: false },

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Menu, Search, Flame, Trophy, Activity, ChevronRight, Star, Clock, Calendar, ChevronDown, Check, Dribbble, Target } from "lucide-react";
+import { useBet } from "@/contexts/BetContext";
 
 export default function SportsPage() {
   const [activeSport, setActiveSport] = useState("Futbol");
@@ -268,15 +269,24 @@ export default function SportsPage() {
 
                 {/* Odds Buttons */}
                 <div className="flex items-center gap-2 w-full md:w-auto">
-                  <button className="flex-1 md:w-20 lg:w-24 bg-white/5 hover:bg-[#16a34a] hover:text-black border border-white/10 hover:border-[#16a34a] rounded-lg py-3 flex flex-col items-center justify-center transition-all group/btn">
+                  <button 
+                    onClick={() => addSelection({ id: Math.random().toString(), matchId: match.id.toString(), matchTitle: `${match.homeTeam} vs ${match.awayTeam}`, selection: match.homeTeam, odds: parseFloat(match.odds.home) })}
+                    className="flex-1 md:w-20 lg:w-24 bg-white/5 hover:bg-[#16a34a] hover:text-black border border-white/10 hover:border-[#16a34a] rounded-lg py-3 flex flex-col items-center justify-center transition-all group/btn"
+                  >
                     <span className="text-[10px] text-gray-500 group-hover/btn:text-black/60 font-bold mb-0.5">1</span>
                     <span className="font-black text-sm">{match.odds.home}</span>
                   </button>
-                  <button className="flex-1 md:w-20 lg:w-24 bg-white/5 hover:bg-[#16a34a] hover:text-black border border-white/10 hover:border-[#16a34a] rounded-lg py-3 flex flex-col items-center justify-center transition-all group/btn">
+                  <button 
+                    onClick={() => addSelection({ id: Math.random().toString(), matchId: match.id.toString(), matchTitle: `${match.homeTeam} vs ${match.awayTeam}`, selection: "Draw", odds: parseFloat(match.odds.draw) })}
+                    className="flex-1 md:w-20 lg:w-24 bg-white/5 hover:bg-[#16a34a] hover:text-black border border-white/10 hover:border-[#16a34a] rounded-lg py-3 flex flex-col items-center justify-center transition-all group/btn"
+                  >
                     <span className="text-[10px] text-gray-500 group-hover/btn:text-black/60 font-bold mb-0.5">X</span>
                     <span className="font-black text-sm">{match.odds.draw}</span>
                   </button>
-                  <button className="flex-1 md:w-20 lg:w-24 bg-white/5 hover:bg-[#16a34a] hover:text-black border border-white/10 hover:border-[#16a34a] rounded-lg py-3 flex flex-col items-center justify-center transition-all group/btn">
+                  <button 
+                    onClick={() => addSelection({ id: Math.random().toString(), matchId: match.id.toString(), matchTitle: `${match.homeTeam} vs ${match.awayTeam}`, selection: match.awayTeam, odds: parseFloat(match.odds.away) })}
+                    className="flex-1 md:w-20 lg:w-24 bg-white/5 hover:bg-[#16a34a] hover:text-black border border-white/10 hover:border-[#16a34a] rounded-lg py-3 flex flex-col items-center justify-center transition-all group/btn"
+                  >
                     <span className="text-[10px] text-gray-500 group-hover/btn:text-black/60 font-bold mb-0.5">2</span>
                     <span className="font-black text-sm">{match.odds.away}</span>
                   </button>

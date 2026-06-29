@@ -2,10 +2,12 @@
 
 import { X, Copy, Check, Send, Loader2 } from "lucide-react";
 import { VAULTS } from "@/config/vaults";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import toast from "react-hot-toast";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 
 interface DepositModalProps {
   isOpen: boolean;
@@ -23,10 +25,60 @@ export default function DepositModal({ isOpen, onClose, user }: DepositModalProp
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<1 | 2>(1); // 1: Cüzdan Gösterimi, 2: Bildirim Formu
 
+  const { connection } = useConnection();
+  const { publicKey, sendTransaction } = useWallet();
+
   const handleCopy = () => {
     navigator.clipboard.writeText(VAULTS[selectedCoin].address);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleWeb3Deposit = async () => {
+    if (!user) {
+      toast.error("Lütfen önce giriş yapın.");
+      return;
+    }
+    if (!publicKey) {
+      toast.error("Lütfen Web3 cüzdanınızı bağlayın (Sağ üstten).");
+      return;
+    }
+    const depositAmount = parseFloat(prompt("Yatırmak istediğiniz SOL miktarını girin:", "0.1") || "0");
+    if (!depositAmount || depositAmount <= 0) return;
+
+    try {
+      setIsSubmitting(true);
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: publicKey,
+          toPubkey: new PublicKey(VAULTS.SOL.address),
+          lamports: depositAmount * 1_000_000_000, // SOL to lamports
+        })
+      );
+
+      const signature = await sendTransaction(transaction, connection);
+      toast.success(`İşlem gönderildi! İmza: ${signature.slice(0, 8)}...`);
+      
+      // Save directly to Supabase
+      const { error } = await supabase.from('deposits').insert([
+        {
+          user_id: user.id,
+          coin: 'SOL',
+          amount: depositAmount,
+          tx_hash: signature,
+          status: 'PENDING'
+        }
+      ]);
+
+      if (error) throw error;
+      toast.success("Web3 yatırımınız başarıyla kaydedildi! Onay bekleniyor.");
+      onClose();
+    } catch (err: any) {
+      console.error("Web3 Deposit Error:", err);
+      toast.error("İşlem başarısız veya iptal edildi.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -153,11 +205,22 @@ export default function DepositModal({ isOpen, onClose, user }: DepositModalProp
                   </div>
                 </div>
 
+                {selectedCoin === 'SOL' && (
+                  <button 
+                    onClick={handleWeb3Deposit}
+                    disabled={isSubmitting}
+                    className="w-full bg-[#512da8] hover:bg-[#4527a0] text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 mb-3 shadow-[0_0_15px_rgba(81,45,168,0.4)] disabled:opacity-50"
+                  >
+                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    Web3 Cüzdanı ile Hızlı Yatır (Solana)
+                  </button>
+                )}
+
                 <button 
                   onClick={() => setStep(2)}
                   className="w-full bg-[#16a34a] hover:bg-[#15803d] text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
-                  <Send className="w-4 h-4" /> Transferi Yaptım, Bildir
+                  <Send className="w-4 h-4" /> Manuel Transfer Bildirimi Yap
                 </button>
 
                 {/* Warning */}

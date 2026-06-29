@@ -4,6 +4,9 @@ import { X, Lock, Mail } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { useEffect } from "react";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -117,6 +120,15 @@ export default function AuthModal({ isOpen, onClose, type }: AuthModalProps) {
               >
                 {isLogin ? "Kayıt Ol" : "Giriş Yap"}
               </button>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-white/5 flex flex-col items-center">
+              <span className="text-xs text-gray-500 font-bold uppercase mb-3">Veya Web3 Cüzdanı İle</span>
+              
+              {/* Solana Wallet Button */}
+              <div className="w-full flex justify-center wallet-auth-wrapper">
+                <WalletMultiButton className="!bg-[#512da8] hover:!bg-[#4527a0] !w-full !rounded-lg !py-3 !font-bold !text-sm !transition-all !shadow-[0_0_10px_rgba(81,45,168,0.3)] !flex !justify-center" />
+              </div>
             </div>
           </div>
         </motion.div>
