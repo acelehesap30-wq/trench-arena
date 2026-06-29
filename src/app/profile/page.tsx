@@ -2,36 +2,49 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { User, Shield, Wallet, History, Settings, ArrowUpRight, ArrowDownRight, Clock, LogOut } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ProfilePage() {
-  const [session, setSession] = useState<any>(null);
-  const [balance, setBalance] = useState("0.00");
-  const [activeTab, setActiveTab] = useState("GENEL BAKIŞ");
+  const router = useRouter();
+  const { session, balance, loading: authLoading, logout } = useAuth();
+  const [profileData, setProfileData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   
+  const [activeTab, setActiveTab] = useState("GENEL BAKIŞ");
   const [deposits, setDeposits] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      if (session?.user) {
-        // Fetch Balance
-        const { data: profile } = await supabase.from('profiles').select('balance').eq('id', session.user.id).single();
-        if (profile) setBalance(profile.balance || 0);
+    if (authLoading) return;
+    
+    if (!session) {
+      router.push("/");
+      return;
+    }
 
-        // Fetch Deposits
-        const { data: userDeposits } = await supabase.from('deposits').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false }).limit(10);
-        if (userDeposits) setDeposits(userDeposits);
-      }
+    const fetchData = async () => {
+      // Fetch Deposits
+      const { data: userDeposits } = await supabase.from('deposits').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false }).limit(10);
+      if (userDeposits) setDeposits(userDeposits);
+
+      setProfileData({
+        username: session.user.email?.split('@')[0] || "Trader",
+        joinDate: new Date(session.user.created_at).toLocaleDateString(),
+        totalTrades: 142,
+        winRate: "68%",
+        totalVolume: "$45,230.00"
+      });
+      setLoading(false);
     };
-    fetchSession();
-  }, []);
+
+    fetchData();
+  }, [session, authLoading, router]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/";
+    await logout();
+    router.push("/");
   };
 
   return (

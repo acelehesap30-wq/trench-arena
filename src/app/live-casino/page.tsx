@@ -150,7 +150,7 @@ export default function LiveCasinoPage() {
           ) : filteredGames.length === 0 ? (
             <div className="col-span-full py-10 text-center text-gray-500">Bu kategoride oyun bulunamadı.</div>
           ) : filteredGames.map((game) => (
-            <div key={game.id} className="casino-card group block cursor-pointer relative overflow-hidden rounded-2xl border border-white/5 bg-[#0a0a0a]">
+            <Link href={`/game/${game.slug || game.title.toLowerCase().replace(/ /g, '-')}`} key={game.id} className="casino-card group block cursor-pointer relative overflow-hidden rounded-2xl border border-white/5 bg-[#0a0a0a]">
               {/* Hot Badge */}
               {game.hot && (
                 <div className="absolute top-3 left-3 z-20 bg-red-500 text-white text-[10px] font-black px-2 py-1 rounded shadow-[0_0_10px_rgba(239,68,68,0.6)] flex items-center gap-1">
@@ -186,7 +186,7 @@ export default function LiveCasinoPage() {
                   <p className="text-gray-500 text-[10px] font-bold">Min: <span className="text-white">{game.minBet}</span></p>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 

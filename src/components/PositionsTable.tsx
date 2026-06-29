@@ -3,15 +3,19 @@
 import { AlertCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
+import { useAuth } from '@/contexts/AuthContext';
+
 export default function PositionsTable({ currentPrice }: { currentPrice: string | null }) {
+  const { session, loading: authLoading } = useAuth();
   const [positions, setPositions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading) return;
+
     const fetchPositions = async () => {
       try {
         const { supabase } = await import("@/lib/supabase");
-        const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
           const { data, error } = await supabase

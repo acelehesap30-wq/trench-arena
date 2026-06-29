@@ -187,22 +187,39 @@ export default function SportsPage() {
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-red-500/20 text-red-500 border border-red-500/30 text-[10px] font-black mb-4 uppercase tracking-wider animate-pulse">
                   <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div> Canlı Maç Merkezi
                 </span>
-                <h1 className="text-4xl font-black text-white mb-2 tracking-tight">Real Madrid <span className="text-gray-500 text-2xl mx-2">vs</span> Manchester City</h1>
-                <p className="text-gray-400 font-medium text-sm flex items-center gap-2">
-                  <Trophy className="w-4 h-4 text-yellow-500" /> Şampiyonlar Ligi Yarı Final - 72. Dakika
-                </p>
+                
+                {liveMatches.length > 0 ? (
+                  <>
+                    <h1 className="text-4xl font-black text-white mb-2 tracking-tight">
+                      {liveMatches[0].homeTeam} <span className="text-gray-500 text-2xl mx-2">vs</span> {liveMatches[0].awayTeam}
+                    </h1>
+                    <p className="text-gray-400 font-medium text-sm flex items-center gap-2">
+                      <Trophy className="w-4 h-4 text-yellow-500" /> {liveMatches[0].league} - {liveMatches[0].time}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h1 className="text-4xl font-black text-white mb-2 tracking-tight">Spor Bahisleri</h1>
+                    <p className="text-gray-400 font-medium text-sm flex items-center gap-2">
+                      <Trophy className="w-4 h-4 text-yellow-500" /> Şu an canlı maç bulunmuyor
+                    </p>
+                  </>
+                )}
               </div>
-              <div className="hidden md:flex items-center gap-6 glass-premium p-4 rounded-2xl border border-white/10">
-                <div className="text-center">
-                  <div className="text-3xl font-black text-white">2</div>
-                  <div className="text-[10px] text-gray-500 uppercase font-bold mt-1">Real Madrid</div>
+              
+              {liveMatches.length > 0 && (
+                <div className="hidden md:flex items-center gap-6 glass-premium p-4 rounded-2xl border border-white/10">
+                  <div className="text-center">
+                    <div className="text-3xl font-black text-white">{liveMatches[0].score.split(' - ')[0]}</div>
+                    <div className="text-[10px] text-gray-500 uppercase font-bold mt-1 max-w-[80px] truncate">{liveMatches[0].homeTeam}</div>
+                  </div>
+                  <div className="text-gray-600 font-black text-xl">:</div>
+                  <div className="text-center">
+                    <div className="text-3xl font-black text-white">{liveMatches[0].score.split(' - ')[1]}</div>
+                    <div className="text-[10px] text-gray-500 uppercase font-bold mt-1 max-w-[80px] truncate">{liveMatches[0].awayTeam}</div>
+                  </div>
                 </div>
-                <div className="text-gray-600 font-black text-xl">:</div>
-                <div className="text-center">
-                  <div className="text-3xl font-black text-white">1</div>
-                  <div className="text-[10px] text-gray-500 uppercase font-bold mt-1">Man City</div>
-                </div>
-              </div>
+              )}
             </div>
           </div>
 

@@ -14,12 +14,15 @@ const WalletMultiButtonDynamic = dynamic(
     { ssr: false }
 );
 
+import { useAuth } from "@/contexts/AuthContext";
+
 export default function Home() {
   const [isDepositOpen, setIsDepositOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authType, setAuthType] = useState<'LOGIN'|'REGISTER'>('LOGIN');
-  const [session, setSession] = useState<any>(null);
-  const [balance, setBalance] = useState<number>(0);
+  
+  const { session, balance, logout } = useAuth();
+  
   const [activeCategory, setActiveCategory] = useState<string>("TÜMÜ");
   
   const gamesSectionRef = useRef<HTMLDivElement>(null);
@@ -40,25 +43,8 @@ export default function Home() {
     });
   };
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if(session?.user) fetchBalance(session.user.id);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if(session?.user) fetchBalance(session.user.id);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchBalance = async (userId: string) => {
-    const { data } = await supabase.from('profiles').select('balance').eq('id', userId).single();
-    if (data) setBalance(data.balance || 0);
-  };
-
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await logout();
   };
 
   // Premium Casino Games Data
