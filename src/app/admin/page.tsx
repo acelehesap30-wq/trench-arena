@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Users, DollarSign, Activity, Settings, LogOut, Loader2, Server, Check, X as XIcon, Clock } from "lucide-react";
+import { Users, DollarSign, Activity, Settings, LogOut, Loader2, Server, Check, X as XIcon, Clock, RefreshCcw } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 
