@@ -63,6 +63,7 @@ export default function TournamentsPage() {
             <Link href="/sports" className="hover:text-white transition-colors">SPOR</Link>
             <Link href="/live-casino" className="hover:text-white transition-colors">CANLI CASINO</Link>
             <Link href="/tournaments" className="text-white border-b-2 border-[#16a34a] pb-7 pt-7">TURNUVALAR</Link>
+            <Link href="/polymarket" className="hover:text-white transition-colors">POLYMARKET</Link>
           </nav>
         </div>
         <div className="flex items-center gap-4">

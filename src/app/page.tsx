@@ -95,6 +95,7 @@ export default function Home() {
             <Link href="/sports" className="hover:text-white transition-colors flex items-center gap-1">CANLI BAHİS <Flame className="w-4 h-4 text-red-500" /></Link>
             <button onClick={scrollToGames} className="text-white border-b-2 border-[#16a34a] pb-7 pt-7">CASINO</button>
             <Link href="/live-casino" className="hover:text-white transition-colors">CANLI CASINO</Link>
+            <Link href="/polymarket" className="hover:text-white transition-colors">POLYMARKET</Link>
             <Link href="/web3-trading" className="hover:text-white transition-colors flex items-center gap-2">
               WEB3 <span className="bg-[#16a34a] text-black text-[10px] px-1.5 py-0.5 rounded-sm animate-pulse">YENİ</span>
             </Link>

@@ -23,40 +23,74 @@ export default function SportsPage() {
   useEffect(() => {
     const fetchMatches = async () => {
       try {
-        const { supabase } = await import("@/lib/supabase");
-        const { data, error } = await supabase
-          .from("sports_matches")
-          .select("*")
-          .order("created_at", { ascending: false });
+        // ESPN API Endpoints for live/upcoming matches
+        const endpoints = [
+          { url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard', league: 'Premier League' },
+          { url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard', league: 'La Liga' },
+          { url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard', league: 'NBA' },
+          { url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard', league: 'Şampiyonlar Ligi' }
+        ];
 
-        if (!error && data && data.length > 0) {
-          // Supabase'den gelen veriyi eski formata uyduruyoruz
-          const formatted = data.map((m: any) => ({
-            id: m.id,
-            league: m.league,
-            homeTeam: m.home_team,
-            awayTeam: m.away_team,
-            score: m.score,
-            time: m.match_time,
-            odds: { home: m.odds_home, draw: m.odds_draw, away: m.odds_away },
-            hot: m.is_hot
-          }));
-          setLiveMatches(formatted);
+        const allMatches = [];
+
+        for (const ep of endpoints) {
+          try {
+            const res = await fetch(ep.url);
+            const data = await res.json();
+            
+            if (data.events && data.events.length > 0) {
+              const formatted = data.events.map((e: any) => {
+                const comp = e.competitions[0];
+                const home = comp.competitors.find((c: any) => c.homeAway === 'home');
+                const away = comp.competitors.find((c: any) => c.homeAway === 'away');
+                const status = comp.status.type.state; // 'pre', 'in', 'post'
+                const clock = comp.status.displayClock;
+                
+                // Parse odds if available (DraftKings via ESPN)
+                let oddsHome = 1.85, oddsDraw = 3.40, oddsAway = 4.20;
+                if (comp.odds && comp.odds.length > 0 && comp.odds[0].moneyline) {
+                  const ml = comp.odds[0].moneyline;
+                  
+                  const convertOdds = (american: number) => {
+                    if (!american) return 2.0;
+                    if (american < 0) return Number(((100 / Math.abs(american)) + 1).toFixed(2));
+                    return Number(((american / 100) + 1).toFixed(2));
+                  };
+
+                  if (ml.home?.close?.odds) oddsHome = convertOdds(parseInt(ml.home.close.odds));
+                  if (ml.away?.close?.odds) oddsAway = convertOdds(parseInt(ml.away.close.odds));
+                  if (ml.draw?.close?.odds) oddsDraw = convertOdds(parseInt(ml.draw.close.odds));
+                }
+
+                return {
+                  id: e.id,
+                  league: ep.league,
+                  homeTeam: home?.team?.displayName || 'Home',
+                  awayTeam: away?.team?.displayName || 'Away',
+                  score: status === 'pre' ? '0-0' : `${home?.score || 0}-${away?.score || 0}`,
+                  time: status === 'pre' ? e.date.substring(11, 16) : (status === 'post' ? 'Bitti' : `${clock}'`),
+                  odds: { home: oddsHome, draw: oddsDraw, away: oddsAway },
+                  hot: status === 'in' || e.name.includes('Madrid') || e.name.includes('Lakers')
+                };
+              });
+              allMatches.push(...formatted);
+            }
+          } catch (e) {
+            console.error(`Failed to fetch ${ep.league}:`, e);
+          }
+        }
+
+        if (allMatches.length > 0) {
+          setLiveMatches(allMatches);
         } else {
-          // Canlı veritabanı boşsa veya bağlanılamadıysa kullanıcıya boş sayfa yerine mock veri göster
           setLiveMatches([
             { id: 1, league: "Şampiyonlar Ligi", homeTeam: "Real Madrid", awayTeam: "Manchester City", score: "2-1", time: "72'", odds: { home: 1.85, draw: 3.40, away: 4.20 }, hot: true },
-            { id: 2, league: "Premier League", homeTeam: "Arsenal", awayTeam: "Liverpool", score: "0-0", time: "15'", odds: { home: 2.10, draw: 3.10, away: 2.80 }, hot: true },
-            { id: 3, league: "La Liga", homeTeam: "Barcelona", awayTeam: "Atletico Madrid", score: "1-0", time: "45'", odds: { home: 1.65, draw: 3.80, away: 5.50 }, hot: false },
-            { id: 4, league: "Serie A", homeTeam: "Juventus", awayTeam: "Inter", score: "2-2", time: "88'", odds: { home: 3.50, draw: 1.90, away: 2.40 }, hot: true },
           ]);
         }
       } catch (err) {
-        console.error("Supabase Error:", err);
+        console.error("Fetch Error:", err);
         setLiveMatches([
           { id: 1, league: "Şampiyonlar Ligi", homeTeam: "Real Madrid", awayTeam: "Manchester City", score: "2-1", time: "72'", odds: { home: 1.85, draw: 3.40, away: 4.20 }, hot: true },
-          { id: 2, league: "Premier League", homeTeam: "Arsenal", awayTeam: "Liverpool", score: "0-0", time: "15'", odds: { home: 2.10, draw: 3.10, away: 2.80 }, hot: true },
-          { id: 3, league: "La Liga", homeTeam: "Barcelona", awayTeam: "Atletico Madrid", score: "1-0", time: "45'", odds: { home: 1.65, draw: 3.80, away: 5.50 }, hot: false },
         ]);
       } finally {
         setLoadingMatches(false);
@@ -78,6 +112,7 @@ export default function SportsPage() {
             <Link href="/sports" className="text-white border-b-2 border-[#16a34a] pb-7 pt-7">SPOR</Link>
             <Link href="/live-casino" className="hover:text-white transition-colors">CANLI CASINO</Link>
             <Link href="/tournaments" className="hover:text-white transition-colors">TURNUVALAR</Link>
+            <Link href="/polymarket" className="hover:text-white transition-colors">POLYMARKET</Link>
           </nav>
         </div>
         <div className="flex items-center gap-4">

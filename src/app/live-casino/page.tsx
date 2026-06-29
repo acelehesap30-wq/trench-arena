@@ -39,14 +39,20 @@ export default function LiveCasinoPage() {
             { id: 2, title: "Crazy Time", provider: "Evolution", category: "GAME SHOWS", image: "https://images.unsplash.com/photo-1596838132731-3301c3fd4317?q=80&w=600", players: 3850, minBet: "$0.10", hot: true },
             { id: 3, title: "Infinite Blackjack", provider: "Evolution", category: "BLACKJACK", image: "https://images.unsplash.com/photo-1511516805178-06bbddab960e?q=80&w=600", players: 850, minBet: "$1.00", hot: false },
             { id: 4, title: "XXXtreme Lightning", provider: "Evolution", category: "ROULETTE", image: "https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?q=80&w=600", players: 2100, minBet: "$0.20", hot: true },
+            { id: 5, title: "Mega Roulette", provider: "Pragmatic Play", category: "ROULETTE", image: "https://images.unsplash.com/photo-1518972559570-7cc1309f3229?q=80&w=600", players: 1100, minBet: "$0.10", hot: true },
+            { id: 6, title: "Sweet Bonanza Candyland", provider: "Pragmatic Play", category: "GAME SHOWS", image: "https://images.unsplash.com/photo-1533558701576-23c65e0272fb?q=80&w=600", players: 5200, minBet: "$0.20", hot: true },
+            { id: 7, title: "ONE Blackjack", provider: "Pragmatic Play", category: "BLACKJACK", image: "https://images.unsplash.com/photo-1563214555-5f50f269a8b6?q=80&w=600", players: 900, minBet: "$1.00", hot: false },
+            { id: 8, title: "Speed Baccarat", provider: "Pragmatic Play", category: "BACCARAT", image: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?q=80&w=600", players: 1350, minBet: "$2.00", hot: false }
           ]);
         }
       } catch (err) {
         console.error("Supabase Error:", err);
         setLiveGames([
-          { id: 1, title: "Lightning Roulette", provider: "Evolution", category: "ROULETTE", image: "https://images.unsplash.com/photo-1605901309584-818e25960b8f?q=80&w=600", players: 1420, minBet: "$0.20", hot: true },
-          { id: 2, title: "Crazy Time", provider: "Evolution", category: "GAME SHOWS", image: "https://images.unsplash.com/photo-1596838132731-3301c3fd4317?q=80&w=600", players: 3850, minBet: "$0.10", hot: true },
-          { id: 3, title: "Infinite Blackjack", provider: "Evolution", category: "BLACKJACK", image: "https://images.unsplash.com/photo-1511516805178-06bbddab960e?q=80&w=600", players: 850, minBet: "$1.00", hot: false },
+            { id: 1, title: "Lightning Roulette", provider: "Evolution", category: "ROULETTE", image: "https://images.unsplash.com/photo-1605901309584-818e25960b8f?q=80&w=600", players: 1420, minBet: "$0.20", hot: true },
+            { id: 2, title: "Crazy Time", provider: "Evolution", category: "GAME SHOWS", image: "https://images.unsplash.com/photo-1596838132731-3301c3fd4317?q=80&w=600", players: 3850, minBet: "$0.10", hot: true },
+            { id: 3, title: "Infinite Blackjack", provider: "Evolution", category: "BLACKJACK", image: "https://images.unsplash.com/photo-1511516805178-06bbddab960e?q=80&w=600", players: 850, minBet: "$1.00", hot: false },
+            { id: 5, title: "Mega Roulette", provider: "Pragmatic Play", category: "ROULETTE", image: "https://images.unsplash.com/photo-1518972559570-7cc1309f3229?q=80&w=600", players: 1100, minBet: "$0.10", hot: true },
+            { id: 6, title: "Sweet Bonanza Candyland", provider: "Pragmatic Play", category: "GAME SHOWS", image: "https://images.unsplash.com/photo-1533558701576-23c65e0272fb?q=80&w=600", players: 5200, minBet: "$0.20", hot: true },
         ]);
       } finally {
         setLoading(false);
@@ -71,6 +77,7 @@ export default function LiveCasinoPage() {
             <Link href="/sports" className="hover:text-white transition-colors">SPOR</Link>
             <Link href="/live-casino" className="text-white border-b-2 border-[#16a34a] pb-7 pt-7">CANLI CASINO</Link>
             <Link href="/tournaments" className="hover:text-white transition-colors">TURNUVALAR</Link>
+            <Link href="/polymarket" className="hover:text-white transition-colors">POLYMARKET</Link>
           </nav>
         </div>
         <div className="flex items-center gap-4">
