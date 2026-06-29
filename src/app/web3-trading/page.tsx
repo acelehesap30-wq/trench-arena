@@ -92,7 +92,7 @@ export default function Web3TradingPage() {
                <button className="text-sm font-bold text-gray-500 hover:text-white transition-colors pb-1">GEÇMİŞ</button>
             </div>
             <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
-              <PositionsTable />
+              <PositionsTable currentPrice={currentPrice} />
             </div>
           </div>
         </div>
