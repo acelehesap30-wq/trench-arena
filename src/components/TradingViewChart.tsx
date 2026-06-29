@@ -12,21 +12,26 @@ export default function TradingViewChart({ currentPrice }: TradingViewChartProps
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   
-  // Create mock historical candlestick data for SOL/USD
-  const [data] = useState(() => {
+  const [data, setData] = useState<any[]>([]);
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => {
+    if (initialized || !currentPrice || currentPrice === "145.20" || currentPrice === "0.00") return;
+    
+    // Once we get a real price from Pyth, generate the mock history based on that real price.
     const historical = [];
     let time = Math.floor(Date.now() / 1000) - 3600; // 1 hour ago
-    let lastClose = 145.0;
+    let lastClose = parseFloat(currentPrice);
     
     for(let i=0; i<60; i++) {
       const open = lastClose;
-      const change = (Math.random() - 0.5) * 2;
+      const change = (Math.random() - 0.5) * (lastClose * 0.005); // 0.5% volatility
       const close = open + change;
-      const high = Math.max(open, close) + Math.random();
-      const low = Math.min(open, close) - Math.random();
+      const high = Math.max(open, close) + Math.random() * (lastClose * 0.002);
+      const low = Math.min(open, close) - Math.random() * (lastClose * 0.002);
       
       historical.push({
-        time: time as any, // lightweight-charts expects UTCTimestamp
+        time: time as any,
         open,
         high,
         low,
@@ -35,8 +40,10 @@ export default function TradingViewChart({ currentPrice }: TradingViewChartProps
       lastClose = close;
       time += 60; // 1 minute per candle
     }
-    return historical;
-  });
+    
+    setData(historical);
+    setInitialized(true);
+  }, [currentPrice, initialized]);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -96,7 +103,7 @@ export default function TradingViewChart({ currentPrice }: TradingViewChartProps
 
   // Update live price
   useEffect(() => {
-    if (!seriesRef.current || !currentPrice) return;
+    if (!seriesRef.current || !currentPrice || data.length === 0) return;
     
     const price = parseFloat(currentPrice);
     const lastData = data[data.length - 1];

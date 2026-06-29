@@ -11,7 +11,7 @@ const OrderBook = dynamic(() => import("@/components/OrderBook"), { ssr: false }
 const PositionsTable = dynamic(() => import("@/components/PositionsTable"), { ssr: false });
 
 export default function Web3TradingPage() {
-  const [currentPrice, setCurrentPrice] = useState<string>("145.20");
+  const [currentPrice, setCurrentPrice] = useState<string>("0.00");
   const [activeMarket, setActiveMarket] = useState("SOL/USD");
   const [orderType, setOrderType] = useState<"BUY" | "SELL">("BUY");
 
