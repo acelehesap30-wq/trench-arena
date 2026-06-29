@@ -8,6 +8,7 @@ import { useBet } from "@/contexts/BetContext";
 export default function SportsPage() {
   const [activeSport, setActiveSport] = useState("Futbol");
   const [activeTab, setActiveTab] = useState("CANLI");
+  const { addSelection } = useBet();
 
   const sportsCategories = [
     { name: "Futbol", count: 145, icon: <Activity className="w-4 h-4" /> },
