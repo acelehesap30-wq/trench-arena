@@ -9,6 +9,10 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  
+  // Yeni Stateler (Canlı Veri)
+  const [totalBalance, setTotalBalance] = useState(0);
+  const [pendingDeposits, setPendingDeposits] = useState(0);
 
   // Canlı Veri (Live Data) Supabase'den çekiliyor. Mock kaldırıldı.
   useEffect(() => {
@@ -33,8 +37,23 @@ export default function AdminDashboard() {
              throw error;
           }
         } else {
+          // Calculate Total Balance
+          const total = data?.reduce((acc, user) => acc + (user.balance || 0), 0) || 0;
+          setTotalBalance(total);
+          
           setUsers(data || []);
         }
+
+        // Bekleyen Yatırımları Çek (Canlı)
+        const { data: depositsData, error: depositsError } = await supabase
+          .from('deposits')
+          .select('*')
+          .eq('status', 'PENDING');
+          
+        if (!depositsError && depositsData) {
+          setPendingDeposits(depositsData.length);
+        }
+
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -103,8 +122,8 @@ export default function AdminDashboard() {
             <div className="bg-[#0a0a0a] p-8 rounded-2xl border border-white/5 relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><DollarSign className="w-24 h-24 text-white" /></div>
               <div className="text-gray-500 text-sm font-black uppercase tracking-widest mb-3 relative z-10">Toplam Kasa Hacmi</div>
-              <div className="text-4xl font-black text-white relative z-10 drop-shadow-lg">$14,250.00</div>
-              <div className="text-xs text-[#16a34a] font-bold mt-4 relative z-10">+%12 bu hafta</div>
+              <div className="text-4xl font-black text-white relative z-10 drop-shadow-lg">${totalBalance.toFixed(2)}</div>
+              <div className="text-xs text-[#16a34a] font-bold mt-4 relative z-10">Canlı Kasa Durumu</div>
             </div>
             
             <div className="bg-[#0a0a0a] p-8 rounded-2xl border border-white/5 relative overflow-hidden group">
@@ -117,7 +136,7 @@ export default function AdminDashboard() {
             <div className="bg-[#0a0a0a] p-8 rounded-2xl border border-amber-500/20 relative overflow-hidden group shadow-[0_0_30px_rgba(245,158,11,0.05)]">
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><Activity className="w-24 h-24 text-amber-500" /></div>
               <div className="text-amber-500/80 text-sm font-black uppercase tracking-widest mb-3 relative z-10">Bekleyen Yatırımlar</div>
-              <div className="text-4xl font-black text-amber-500 relative z-10 drop-shadow-[0_0_10px_rgba(245,158,11,0.3)]">0</div>
+              <div className="text-4xl font-black text-amber-500 relative z-10 drop-shadow-[0_0_10px_rgba(245,158,11,0.3)]">{pendingDeposits}</div>
               <div className="text-xs text-amber-500/50 font-bold mt-4 relative z-10">Manuel Onay Bekliyor</div>
             </div>
           </div>

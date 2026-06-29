@@ -19,6 +19,7 @@ export default function Home() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authType, setAuthType] = useState<'LOGIN'|'REGISTER'>('LOGIN');
   const [session, setSession] = useState<any>(null);
+  const [balance, setBalance] = useState<number>(0);
   const [activeCategory, setActiveCategory] = useState<string>("TÜMÜ");
   
   const gamesSectionRef = useRef<HTMLDivElement>(null);
@@ -42,12 +43,19 @@ export default function Home() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if(session?.user) fetchBalance(session.user.id);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if(session?.user) fetchBalance(session.user.id);
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  const fetchBalance = async (userId: string) => {
+    const { data } = await supabase.from('profiles').select('balance').eq('id', userId).single();
+    if (data) setBalance(data.balance || 0);
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -96,22 +104,23 @@ export default function Home() {
         <div className="flex items-center gap-4">
           <Search className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer mr-2 hidden md:block" />
           
+          <button 
+            onClick={() => setIsDepositOpen(true)}
+            className="btn-premium px-6 py-2.5 text-sm mr-2 shadow-[0_0_15px_rgba(22,163,74,0.3)] animate-pulse"
+          >
+            KRİPTO YATIR
+          </button>
+
           {session ? (
             <div className="flex items-center gap-4 border-l border-white/10 pl-4">
               <div className="flex flex-col text-right">
                 <span className="text-xs text-gray-500">{session.user.email?.split('@')[0]}</span>
-                <span className="text-sm font-bold text-[#16a34a]">$1,450.00</span>
+                <span className="text-sm font-bold text-[#16a34a]">${balance.toFixed(2)}</span>
               </div>
-              <button 
-                onClick={() => setIsDepositOpen(true)}
-                className="btn-premium px-6 py-2.5 text-sm"
-              >
-                YATIRIM
-              </button>
               <button onClick={handleLogout} className="text-xs text-gray-500 hover:text-white underline ml-2">Çıkış</button>
             </div>
           ) : (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 border-l border-white/10 pl-4">
               <button 
                 onClick={() => { setAuthType('LOGIN'); setIsAuthOpen(true); }}
                 className="text-white hover:text-[#16a34a] font-bold text-sm px-4 py-2 transition-colors"
@@ -208,6 +217,38 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Live Winners Ticker (New Feature) */}
+          <div className="mb-12 bg-[#0a0a0a] border border-white/5 rounded-2xl p-4 flex items-center overflow-hidden relative shadow-lg">
+            <div className="flex items-center gap-3 text-[#16a34a] font-black uppercase text-xs tracking-widest border-r border-white/10 pr-6 mr-6 shrink-0 z-10 bg-[#0a0a0a]">
+              <div className="w-2 h-2 rounded-full bg-[#16a34a] animate-pulse"></div>
+              CANLI KAZANÇLAR
+            </div>
+            
+            {/* CSS Marquee */}
+            <div className="flex gap-8 animate-[marquee_20s_linear_infinite] whitespace-nowrap">
+              {[
+                { user: "berke***98", game: "Gates of Olympus", win: "$1,250.00" },
+                { user: "crypto***ng", game: "Deep Needle", win: "$420.50" },
+                { user: "vip***er1", game: "Sweet Bonanza", win: "$8,900.00" },
+                { user: "newb***23", game: "Aviator", win: "$150.25" },
+                { user: "sol***whale", game: "Crazy Time", win: "$3,400.00" },
+                { user: "berke***98", game: "Gates of Olympus", win: "$1,250.00" }, // duplicated for smooth loop
+                { user: "crypto***ng", game: "Deep Needle", win: "$420.50" },
+              ].map((win, idx) => (
+                <div key={idx} className="flex items-center gap-3 text-sm">
+                  <span className="text-gray-400 font-mono text-xs">{win.user}</span>
+                  <span className="text-gray-600">oynadı</span>
+                  <span className="text-white font-bold">{win.game}</span>
+                  <span className="text-[#16a34a] font-black ml-2 px-2 py-0.5 bg-[#16a34a]/10 rounded border border-[#16a34a]/20">
+                    +{win.win}
+                  </span>
+                </div>
+              ))}
+            </div>
+            {/* Fade Edges */}
+            <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#0a0a0a] to-transparent pointer-events-none"></div>
+          </div>
+
           {/* Games Grid Section */}
           <div className="mb-12" ref={gamesSectionRef}>
             <div className="flex justify-between items-end mb-8">
@@ -264,7 +305,7 @@ export default function Home() {
       </div>
 
       <Toaster position="bottom-right" />
-      <DepositModal isOpen={isDepositOpen} onClose={() => setIsDepositOpen(false)} />
+      <DepositModal isOpen={isDepositOpen} onClose={() => setIsDepositOpen(false)} user={session?.user} />
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} type={authType} />
     </div>
   );
