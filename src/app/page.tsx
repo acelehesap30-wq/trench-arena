@@ -91,13 +91,13 @@ export default function Home() {
           </div>
           
           <nav className="hidden xl:flex items-center gap-8 text-sm font-extrabold tracking-wider text-gray-400">
-            <button onClick={() => handleComingSoon("Spor Bahisleri API")} className="hover:text-white transition-colors">SPOR</button>
-            <button onClick={() => handleComingSoon("Canlı Maç Verisi")} className="hover:text-white transition-colors flex items-center gap-1">CANLI BAHİS <Flame className="w-4 h-4 text-red-500" /></button>
+            <Link href="/sports" className="hover:text-white transition-colors">SPOR</Link>
+            <Link href="/sports" className="hover:text-white transition-colors flex items-center gap-1">CANLI BAHİS <Flame className="w-4 h-4 text-red-500" /></Link>
             <button onClick={scrollToGames} className="text-white border-b-2 border-[#16a34a] pb-7 pt-7">CASINO</button>
-            <button onClick={() => handleComingSoon("Evolution Live API")} className="hover:text-white transition-colors">CANLI CASINO</button>
-            <button onClick={() => setActiveCategory("WEB3")} className="hover:text-white transition-colors flex items-center gap-2">
+            <Link href="/live-casino" className="hover:text-white transition-colors">CANLI CASINO</Link>
+            <Link href="/web3-trading" className="hover:text-white transition-colors flex items-center gap-2">
               WEB3 <span className="bg-[#16a34a] text-black text-[10px] px-1.5 py-0.5 rounded-sm animate-pulse">YENİ</span>
-            </button>
+            </Link>
           </nav>
         </div>
 
@@ -113,10 +113,10 @@ export default function Home() {
 
           {session ? (
             <div className="flex items-center gap-4 border-l border-white/10 pl-4">
-              <div className="flex flex-col text-right">
+              <Link href="/profile" className="flex flex-col text-right hover:opacity-80 transition-opacity">
                 <span className="text-xs text-gray-500">{session.user.email?.split('@')[0]}</span>
                 <span className="text-sm font-bold text-[#16a34a]">${balance.toFixed(2)}</span>
-              </div>
+              </Link>
               <button onClick={handleLogout} className="text-xs text-gray-500 hover:text-white underline ml-2">Çıkış</button>
             </div>
           ) : (
@@ -150,14 +150,18 @@ export default function Home() {
                 <li onClick={() => setActiveCategory("TÜMÜ")} className={`flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 hover:text-white cursor-pointer transition-colors ${activeCategory === 'TÜMÜ' ? 'bg-white/10 text-white border-l-4 border-[#16a34a] shadow-[inset_4px_0_0_0_#16a34a]' : ''}`}>
                   <Star className={`w-5 h-5 ${activeCategory === 'TÜMÜ' ? 'text-[#16a34a]' : ''}`} /> Popüler
                 </li>
-                <li onClick={() => handleComingSoon("Turnuva Sistemi")} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 hover:text-white cursor-pointer transition-colors">
-                  <Trophy className="w-5 h-5 text-amber-500" /> Turnuvalar
+                <li className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 hover:text-white cursor-pointer transition-colors">
+                  <Link href="/tournaments" className="flex items-center gap-3 w-full">
+                    <Trophy className="w-5 h-5 text-amber-500" /> Turnuvalar
+                  </Link>
                 </li>
                 <li onClick={() => setActiveCategory("SLOT")} className={`flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 hover:text-white cursor-pointer transition-colors ${activeCategory === 'SLOT' ? 'bg-white/10 text-white border-l-4 border-[#16a34a]' : ''}`}>
                   <Play className="w-5 h-5 text-red-500" /> Slot Oyunları
                 </li>
-                <li onClick={() => setActiveCategory("WEB3")} className={`flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 hover:text-white cursor-pointer transition-colors ${activeCategory === 'WEB3' ? 'bg-white/10 text-white border-l-4 border-[#16a34a]' : ''}`}>
-                  <Activity className="w-5 h-5 text-blue-500" /> Web3 Trading
+                <li className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 hover:text-white cursor-pointer transition-colors">
+                  <Link href="/web3-trading" className="flex items-center gap-3 w-full">
+                    <Activity className="w-5 h-5 text-blue-500" /> Web3 Trading
+                  </Link>
                 </li>
               </ul>
             </div>

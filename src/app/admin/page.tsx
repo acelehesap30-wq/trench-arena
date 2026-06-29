@@ -2,205 +2,266 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Users, DollarSign, Activity, Settings, LogOut, Loader2, Server } from "lucide-react";
+import { Users, DollarSign, Activity, Settings, LogOut, Loader2, Server, Check, X as XIcon, Clock } from "lucide-react";
 import Link from "next/link";
+import toast from "react-hot-toast";
 
 export default function AdminDashboard() {
+  const [activeTab, setActiveTab] = useState("KULLANICILAR");
   const [users, setUsers] = useState<any[]>([]);
+  const [deposits, setDeposits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   
-  // Yeni Stateler (Canlı Veri)
   const [totalBalance, setTotalBalance] = useState(0);
-  const [pendingDeposits, setPendingDeposits] = useState(0);
+  const [pendingDepositsCount, setPendingDepositsCount] = useState(0);
 
-  // Canlı Veri (Live Data) Supabase'den çekiliyor. Mock kaldırıldı.
   useEffect(() => {
-    const fetchLiveData = async () => {
-      try {
-        setLoading(true);
-        // Supabase 'profiles' tablosundan canlı kullanıcı verilerini çekiyoruz
-        // Not: Eğer RLS kuralları kapalı değilse veya tablo yoksa hata fırlatabilir.
-        // Gerçek dünyada bu işlemler Server-Side veya Admin API Key ile yapılır.
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(50);
-
-        if (error) {
-          console.error("Supabase Error:", error);
-          // Eğer profiles tablosu yoksa boş döndür, hata gösterme
-          if (error.code === '42P01') { 
-             setUsers([]); 
-          } else {
-             throw error;
-          }
-        } else {
-          // Calculate Total Balance
-          const total = data?.reduce((acc, user) => acc + (user.balance || 0), 0) || 0;
-          setTotalBalance(total);
-          
-          setUsers(data || []);
-        }
-
-        // Bekleyen Yatırımları Çek (Canlı)
-        const { data: depositsData, error: depositsError } = await supabase
-          .from('deposits')
-          .select('*')
-          .eq('status', 'PENDING');
-          
-        if (!depositsError && depositsData) {
-          setPendingDeposits(depositsData.length);
-        }
-
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLiveData();
+    fetchData();
   }, []);
 
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Profiles
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (!profilesError && profilesData) {
+        setUsers(profilesData);
+        setTotalBalance(profilesData.reduce((acc, user) => acc + (user.balance || 0), 0));
+      }
+
+      // Deposits
+      const { data: depositsData, error: depositsError } = await supabase
+        .from('deposits')
+        .select('*, profiles(email)')
+        .order('created_at', { ascending: false });
+        
+      if (!depositsError && depositsData) {
+        setDeposits(depositsData);
+        setPendingDepositsCount(depositsData.filter(d => d.status === 'PENDING').length);
+      }
+
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDepositAction = async (depositId: string, userId: string, amount: number, action: 'APPROVED' | 'REJECTED') => {
+    try {
+      // 1. Update Deposit Status
+      const { error: depositError } = await supabase
+        .from('deposits')
+        .update({ status: action })
+        .eq('id', depositId);
+        
+      if (depositError) throw depositError;
+
+      // 2. If Approved, Add to User Balance
+      if (action === 'APPROVED') {
+         // Get current balance
+         const { data: profile } = await supabase.from('profiles').select('balance').eq('id', userId).single();
+         const newBalance = (profile?.balance || 0) + amount;
+         
+         const { error: profileError } = await supabase
+           .from('profiles')
+           .update({ balance: newBalance })
+           .eq('id', userId);
+           
+         if (profileError) throw profileError;
+      }
+
+      toast.success(`Yatırım işlemi ${action === 'APPROVED' ? 'onaylandı' : 'reddedildi'}.`);
+      fetchData(); // Refresh Data
+
+    } catch (err: any) {
+      toast.error("İşlem hatası: " + err.message);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#050505] text-white font-sans flex selection:bg-[#16a34a]/30">
-      {/* Sidebar - Premium Dark */}
-      <aside className="w-64 bg-[#0a0a0a] border-r border-white/5 flex flex-col z-10 shadow-2xl">
-        <div className="p-8 border-b border-white/5">
-          <span className="text-3xl font-black text-[#16a34a] tracking-tighter drop-shadow-[0_0_15px_rgba(22,163,74,0.4)]">
-            GOD<span className="text-white">MODE</span>
+    <div className="min-h-screen bg-[#050505] text-white font-sans flex">
+      
+      {/* Sidebar */}
+      <aside className="w-64 bg-[#0a0a0a] border-r border-white/5 flex flex-col hidden lg:flex">
+        <div className="h-20 flex items-center justify-center border-b border-white/5 px-6">
+          <span className="text-xl font-black tracking-tighter text-white">
+            TRENCH<span className="text-red-500">ADMIN</span>
           </span>
-          <div className="flex items-center gap-2 mt-2">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#16a34a] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#16a34a]"></span>
-            </span>
-            <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Canlı Sistem Aktif</div>
-          </div>
         </div>
-        <nav className="flex-1 p-6 space-y-3 text-sm font-bold">
-          <button className="w-full flex items-center gap-3 p-4 bg-gradient-to-r from-[#16a34a]/20 to-transparent border-l-4 border-[#16a34a] text-white rounded-r-lg transition-all">
-            <Activity className="w-5 h-5 text-[#16a34a]" /> Dashboard
-          </button>
-          <button className="w-full flex items-center gap-3 p-4 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
-            <Users className="w-5 h-5" /> Müşteriler
-          </button>
-          <button className="w-full flex items-center gap-3 p-4 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
-            <DollarSign className="w-5 h-5" /> Finans / Kasa
-          </button>
-          <button className="w-full flex items-center gap-3 p-4 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
-            <Server className="w-5 h-5" /> API Yonetimi
-          </button>
+        
+        <nav className="flex-1 py-8 px-4 space-y-2">
+          {[
+            { name: "KULLANICILAR", icon: <Users className="w-5 h-5" /> },
+            { name: "YATIRIMLAR", icon: <DollarSign className="w-5 h-5" /> },
+            { name: "SİSTEM LOGLARI", icon: <Activity className="w-5 h-5" /> },
+            { name: "AYARLAR", icon: <Settings className="w-5 h-5" /> },
+          ].map((item) => (
+            <button 
+              key={item.name}
+              onClick={() => setActiveTab(item.name)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm ${
+                activeTab === item.name 
+                  ? 'bg-white/10 text-white shadow-inner' 
+                  : 'text-gray-500 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              {item.icon} {item.name}
+            </button>
+          ))}
         </nav>
-        <div className="p-6 border-t border-white/5">
-          <Link href="/" className="w-full flex items-center justify-center gap-3 p-4 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-xl transition-colors text-sm font-black uppercase tracking-wider border border-red-500/20">
+
+        <div className="p-4 border-t border-white/5">
+          <Link href="/" className="flex items-center gap-3 text-sm font-bold text-gray-500 hover:text-white px-4 py-3 transition-colors">
             <LogOut className="w-5 h-5" /> Lobiye Dön
           </Link>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-10 overflow-y-auto relative">
-        <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-[#16a34a]/5 to-transparent pointer-events-none"></div>
-        
-        <div className="relative z-10">
-          <div className="flex justify-between items-center mb-10">
-            <div>
-              <h1 className="text-4xl font-black text-white tracking-tight mb-2">Merkezi Komuta</h1>
-              <p className="text-gray-400 text-sm font-medium">Tüm canlı casino verilerini gerçek zamanlı yönetin.</p>
+      <main className="flex-1 flex flex-col h-screen overflow-hidden">
+        {/* Header */}
+        <header className="h-20 bg-[#0a0a0a] border-b border-white/5 flex items-center justify-between px-8 shrink-0">
+          <h1 className="text-xl font-black tracking-wider flex items-center gap-2">
+            <Settings className="w-6 h-6 text-red-500" /> SİSTEM YÖNETİMİ
+          </h1>
+          <div className="flex items-center gap-4">
+            <span className="bg-red-500/20 text-red-500 border border-red-500/30 px-3 py-1 rounded text-xs font-black tracking-widest flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+              CANLI
+            </span>
+          </div>
+        </header>
+
+        {/* Dashboard Area */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-8">
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-[#0a0a0a] border border-white/5 p-6 rounded-2xl relative overflow-hidden group">
+              <div className="absolute -right-6 -top-6 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all"></div>
+              <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Toplam Kullanıcı</p>
+              <h3 className="text-3xl font-black text-white">{users.length}</h3>
             </div>
-            <div className="bg-black/50 backdrop-blur border border-white/10 px-6 py-3 rounded-xl font-mono text-sm shadow-xl flex items-center gap-3">
-              <span className="text-gray-500">Root:</span> 
-              <span className="font-bold text-[#16a34a]">berkecansuskun1998</span>
+            <div className="bg-[#0a0a0a] border border-white/5 p-6 rounded-2xl relative overflow-hidden group">
+              <div className="absolute -right-6 -top-6 w-24 h-24 bg-[#16a34a]/10 rounded-full blur-2xl group-hover:bg-[#16a34a]/20 transition-all"></div>
+              <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Sistemdeki Toplam Bakiye</p>
+              <h3 className="text-3xl font-black text-[#16a34a]">${totalBalance.toFixed(2)}</h3>
+            </div>
+            <div className="bg-[#0a0a0a] border border-red-500/20 p-6 rounded-2xl relative overflow-hidden group shadow-[0_0_15px_rgba(239,68,68,0.05)]">
+              <div className="absolute -right-6 -top-6 w-24 h-24 bg-red-500/10 rounded-full blur-2xl group-hover:bg-red-500/20 transition-all"></div>
+              <p className="text-red-500/80 text-xs font-bold uppercase tracking-widest mb-1">Bekleyen Yatırım Talepleri</p>
+              <h3 className="text-3xl font-black text-white">{pendingDepositsCount}</h3>
             </div>
           </div>
 
-          {/* Stats - Premium Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            <div className="bg-[#0a0a0a] p-8 rounded-2xl border border-white/5 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><DollarSign className="w-24 h-24 text-white" /></div>
-              <div className="text-gray-500 text-sm font-black uppercase tracking-widest mb-3 relative z-10">Toplam Kasa Hacmi</div>
-              <div className="text-4xl font-black text-white relative z-10 drop-shadow-lg">${totalBalance.toFixed(2)}</div>
-              <div className="text-xs text-[#16a34a] font-bold mt-4 relative z-10">Canlı Kasa Durumu</div>
-            </div>
-            
-            <div className="bg-[#0a0a0a] p-8 rounded-2xl border border-white/5 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><Users className="w-24 h-24 text-[#16a34a]" /></div>
-              <div className="text-gray-500 text-sm font-black uppercase tracking-widest mb-3 relative z-10">Aktif Oyuncular</div>
-              <div className="text-4xl font-black text-[#16a34a] relative z-10 drop-shadow-[0_0_10px_rgba(22,163,74,0.3)]">{users.length}</div>
-              <div className="text-xs text-gray-500 font-bold mt-4 relative z-10">Supabase Canlı Veri</div>
-            </div>
-            
-            <div className="bg-[#0a0a0a] p-8 rounded-2xl border border-amber-500/20 relative overflow-hidden group shadow-[0_0_30px_rgba(245,158,11,0.05)]">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><Activity className="w-24 h-24 text-amber-500" /></div>
-              <div className="text-amber-500/80 text-sm font-black uppercase tracking-widest mb-3 relative z-10">Bekleyen Yatırımlar</div>
-              <div className="text-4xl font-black text-amber-500 relative z-10 drop-shadow-[0_0_10px_rgba(245,158,11,0.3)]">{pendingDeposits}</div>
-              <div className="text-xs text-amber-500/50 font-bold mt-4 relative z-10">Manuel Onay Bekliyor</div>
-            </div>
-          </div>
-
-          {/* Live Data Table */}
-          <div className="bg-[#0a0a0a] rounded-2xl border border-white/5 overflow-hidden shadow-2xl">
-            <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.01]">
-              <div>
-                <h2 className="text-xl font-black text-white">Canlı Müşteri Veritabanı</h2>
-                <p className="text-xs text-gray-500 mt-1 font-medium">Supabase bağlantısı aktif.</p>
+          {activeTab === "KULLANICILAR" && (
+            <div className="bg-[#0a0a0a] border border-white/5 rounded-2xl overflow-hidden">
+              <div className="p-6 border-b border-white/5 flex items-center justify-between">
+                <h2 className="text-lg font-black text-white">Kullanıcı Listesi</h2>
+                <button onClick={fetchData} className="text-xs font-bold bg-white/5 px-4 py-2 rounded-lg hover:bg-white/10 transition-colors flex items-center gap-2">
+                  <RefreshCcw className="w-4 h-4" /> YENİLE
+                </button>
               </div>
-              <button className="text-sm font-bold bg-white/5 px-4 py-2 rounded-lg hover:bg-white/10 transition-colors border border-white/5">Tümünü Gör</button>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="text-gray-500 bg-black/40">
+                      <th className="font-black text-xs uppercase tracking-widest py-4 px-6">Email / ID</th>
+                      <th className="font-black text-xs uppercase tracking-widest py-4 px-6">Bakiye</th>
+                      <th className="font-black text-xs uppercase tracking-widest py-4 px-6">Kayıt Tarihi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loading ? (
+                      <tr><td colSpan={3} className="text-center py-10"><Loader2 className="w-6 h-6 animate-spin mx-auto text-[#16a34a]" /></td></tr>
+                    ) : users.map(u => (
+                      <tr key={u.id} className="border-t border-white/5 hover:bg-white/5">
+                        <td className="py-4 px-6 text-gray-300 font-mono text-xs">{u.id}</td>
+                        <td className="py-4 px-6 font-black text-[#16a34a]">${(u.balance || 0).toFixed(2)}</td>
+                        <td className="py-4 px-6 text-gray-500 text-xs">{new Date(u.created_at).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="text-gray-500 bg-black/40">
-                    <th className="font-black text-xs uppercase tracking-widest py-5 px-8">Hesap ID</th>
-                    <th className="font-black text-xs uppercase tracking-widest py-5 px-8">Bakiye (USD)</th>
-                    <th className="font-black text-xs uppercase tracking-widest py-5 px-8">Durum</th>
-                    <th className="font-black text-xs uppercase tracking-widest py-5 px-8 text-right">Aksiyon</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr>
-                      <td colSpan={4} className="py-12 text-center text-gray-500">
-                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#16a34a]" />
-                        <span className="font-mono text-xs">Canlı veri çekiliyor...</span>
-                      </td>
+          )}
+
+          {activeTab === "YATIRIMLAR" && (
+            <div className="bg-[#0a0a0a] border border-white/5 rounded-2xl overflow-hidden">
+              <div className="p-6 border-b border-white/5 flex items-center justify-between">
+                <h2 className="text-lg font-black text-white">Yatırım (Deposit) Talepleri</h2>
+                <button onClick={fetchData} className="text-xs font-bold bg-white/5 px-4 py-2 rounded-lg hover:bg-white/10 transition-colors flex items-center gap-2">
+                  <RefreshCcw className="w-4 h-4" /> YENİLE
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="text-gray-500 bg-black/40">
+                      <th className="font-black text-xs uppercase tracking-widest py-4 px-6">Tarih</th>
+                      <th className="font-black text-xs uppercase tracking-widest py-4 px-6">Kullanıcı (ID)</th>
+                      <th className="font-black text-xs uppercase tracking-widest py-4 px-6">Miktar (USD)</th>
+                      <th className="font-black text-xs uppercase tracking-widest py-4 px-6">TxHash / Coin</th>
+                      <th className="font-black text-xs uppercase tracking-widest py-4 px-6">Durum</th>
+                      <th className="font-black text-xs uppercase tracking-widest py-4 px-6 text-right">Aksiyon</th>
                     </tr>
-                  ) : users.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="py-12 text-center text-gray-500">
-                        <Server className="w-8 h-8 mx-auto mb-3 opacity-20" />
-                        <span className="font-bold text-sm block">Veritabanında kayıtlı üye bulunamadı.</span>
-                        <span className="font-medium text-xs mt-1 block opacity-50">(Veya 'profiles' tablosu RLS tarafından engelleniyor)</span>
-                      </td>
-                    </tr>
-                  ) : (
-                    users.map(u => (
-                      <tr key={u.id} className="border-t border-white/5 hover:bg-white/[0.02] transition-colors">
-                        <td className="py-5 px-8 font-mono text-gray-300">{u.id.substring(0,8)}...</td>
-                        <td className="py-5 px-8 font-black text-[#16a34a] text-base">${u.balance?.toFixed(2) || '0.00'}</td>
-                        <td className="py-5 px-8">
-                          <span className="text-[10px] px-3 py-1.5 rounded-full font-black uppercase tracking-wider bg-[#16a34a]/20 text-[#16a34a] border border-[#16a34a]/20">
-                            AKTİF
-                          </span>
+                  </thead>
+                  <tbody>
+                    {loading ? (
+                      <tr><td colSpan={6} className="text-center py-10"><Loader2 className="w-6 h-6 animate-spin mx-auto text-[#16a34a]" /></td></tr>
+                    ) : deposits.length === 0 ? (
+                      <tr><td colSpan={6} className="text-center py-10 text-gray-500 font-bold">Kayıtlı yatırım işlemi bulunamadı.</td></tr>
+                    ) : deposits.map(dep => (
+                      <tr key={dep.id} className={`border-t border-white/5 hover:bg-white/5 ${dep.status === 'PENDING' ? 'bg-amber-500/5' : ''}`}>
+                        <td className="py-4 px-6 text-gray-500 font-mono text-[10px]">{new Date(dep.created_at).toLocaleString()}</td>
+                        <td className="py-4 px-6 text-gray-300 font-mono text-xs">{dep.user_id.substring(0,8)}...</td>
+                        <td className="py-4 px-6 font-black text-white">${dep.amount.toFixed(2)}</td>
+                        <td className="py-4 px-6">
+                           <div className="flex flex-col">
+                             <span className="text-gray-500 font-mono text-[10px] break-all">{dep.tx_hash}</span>
+                             <span className="text-xs font-bold text-amber-500">{dep.coin}</span>
+                           </div>
                         </td>
-                        <td className="py-5 px-8 text-right">
-                          <button className="text-xs font-bold bg-white/5 text-white px-4 py-2 rounded-lg border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all">
-                            Yönet
-                          </button>
+                        <td className="py-4 px-6">
+                           <span className={`px-2 py-1 text-[10px] font-black uppercase rounded ${
+                             dep.status === 'APPROVED' ? 'bg-green-500/20 text-green-500' :
+                             dep.status === 'REJECTED' ? 'bg-red-500/20 text-red-500' :
+                             'bg-amber-500/20 text-amber-500'
+                           }`}>
+                             {dep.status}
+                           </span>
+                        </td>
+                        <td className="py-4 px-6 text-right">
+                          {dep.status === 'PENDING' && (
+                            <div className="flex justify-end gap-2">
+                              <button onClick={() => handleDepositAction(dep.id, dep.user_id, dep.amount, 'APPROVED')} className="bg-green-500/20 hover:bg-green-500/40 text-green-500 p-2 rounded-lg transition-colors border border-green-500/30">
+                                <Check className="w-4 h-4" />
+                              </button>
+                              <button onClick={() => handleDepositAction(dep.id, dep.user_id, dep.amount, 'REJECTED')} className="bg-red-500/20 hover:bg-red-500/40 text-red-500 p-2 rounded-lg transition-colors border border-red-500/30">
+                                <XIcon className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
+
         </div>
       </main>
+
     </div>
   );
 }
