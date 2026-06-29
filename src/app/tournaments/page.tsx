@@ -19,11 +19,20 @@ export default function TournamentsPage() {
           .eq("is_active", true)
           .order("created_at", { ascending: false });
 
-        if (!error && data) {
+        if (!error && data && data.length > 0) {
           setTournaments(data);
+        } else {
+          setTournaments([
+            { id: "1", title: "Slot İmparatorluğu", description: "Sadece Pragmatic Play oyunlarında geçerlidir.", prize_pool: "50000" },
+            { id: "2", title: "Web3 Degens", description: "Trench Originals (Deep Needle) oyununda en yüksek çarpan.", prize_pool: "10000" }
+          ]);
         }
       } catch (err) {
         console.error("Supabase Error:", err);
+        setTournaments([
+          { id: "1", title: "Slot İmparatorluğu", description: "Sadece Pragmatic Play oyunlarında geçerlidir.", prize_pool: "50000" },
+          { id: "2", title: "Web3 Degens", description: "Trench Originals (Deep Needle) oyununda en yüksek çarpan.", prize_pool: "10000" }
+        ]);
       } finally {
         setLoading(false);
       }

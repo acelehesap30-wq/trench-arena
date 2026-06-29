@@ -20,7 +20,7 @@ export default function LiveCasinoPage() {
           .select("*")
           .order("players_count", { ascending: false });
 
-        if (!error && data) {
+        if (!error && data && data.length > 0) {
           const formatted = data.map((g: any) => ({
             id: g.id,
             title: g.title,
@@ -33,9 +33,21 @@ export default function LiveCasinoPage() {
             hot: g.players_count > 5000
           }));
           setLiveGames(formatted);
+        } else {
+          setLiveGames([
+            { id: 1, title: "Lightning Roulette", provider: "Evolution", category: "ROULETTE", image: "https://images.unsplash.com/photo-1605901309584-818e25960b8f?q=80&w=600", players: 1420, minBet: "$0.20", hot: true },
+            { id: 2, title: "Crazy Time", provider: "Evolution", category: "GAME SHOWS", image: "https://images.unsplash.com/photo-1596838132731-3301c3fd4317?q=80&w=600", players: 3850, minBet: "$0.10", hot: true },
+            { id: 3, title: "Infinite Blackjack", provider: "Evolution", category: "BLACKJACK", image: "https://images.unsplash.com/photo-1511516805178-06bbddab960e?q=80&w=600", players: 850, minBet: "$1.00", hot: false },
+            { id: 4, title: "XXXtreme Lightning", provider: "Evolution", category: "ROULETTE", image: "https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?q=80&w=600", players: 2100, minBet: "$0.20", hot: true },
+          ]);
         }
       } catch (err) {
         console.error("Supabase Error:", err);
+        setLiveGames([
+          { id: 1, title: "Lightning Roulette", provider: "Evolution", category: "ROULETTE", image: "https://images.unsplash.com/photo-1605901309584-818e25960b8f?q=80&w=600", players: 1420, minBet: "$0.20", hot: true },
+          { id: 2, title: "Crazy Time", provider: "Evolution", category: "GAME SHOWS", image: "https://images.unsplash.com/photo-1596838132731-3301c3fd4317?q=80&w=600", players: 3850, minBet: "$0.10", hot: true },
+          { id: 3, title: "Infinite Blackjack", provider: "Evolution", category: "BLACKJACK", image: "https://images.unsplash.com/photo-1511516805178-06bbddab960e?q=80&w=600", players: 850, minBet: "$1.00", hot: false },
+        ]);
       } finally {
         setLoading(false);
       }

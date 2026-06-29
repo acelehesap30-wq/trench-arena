@@ -29,7 +29,7 @@ export default function SportsPage() {
           .select("*")
           .order("created_at", { ascending: false });
 
-        if (!error && data) {
+        if (!error && data && data.length > 0) {
           // Supabase'den gelen veriyi eski formata uyduruyoruz
           const formatted = data.map((m: any) => ({
             id: m.id,
@@ -42,9 +42,22 @@ export default function SportsPage() {
             hot: m.is_hot
           }));
           setLiveMatches(formatted);
+        } else {
+          // Canlı veritabanı boşsa veya bağlanılamadıysa kullanıcıya boş sayfa yerine mock veri göster
+          setLiveMatches([
+            { id: 1, league: "Şampiyonlar Ligi", homeTeam: "Real Madrid", awayTeam: "Manchester City", score: "2-1", time: "72'", odds: { home: 1.85, draw: 3.40, away: 4.20 }, hot: true },
+            { id: 2, league: "Premier League", homeTeam: "Arsenal", awayTeam: "Liverpool", score: "0-0", time: "15'", odds: { home: 2.10, draw: 3.10, away: 2.80 }, hot: true },
+            { id: 3, league: "La Liga", homeTeam: "Barcelona", awayTeam: "Atletico Madrid", score: "1-0", time: "45'", odds: { home: 1.65, draw: 3.80, away: 5.50 }, hot: false },
+            { id: 4, league: "Serie A", homeTeam: "Juventus", awayTeam: "Inter", score: "2-2", time: "88'", odds: { home: 3.50, draw: 1.90, away: 2.40 }, hot: true },
+          ]);
         }
       } catch (err) {
         console.error("Supabase Error:", err);
+        setLiveMatches([
+          { id: 1, league: "Şampiyonlar Ligi", homeTeam: "Real Madrid", awayTeam: "Manchester City", score: "2-1", time: "72'", odds: { home: 1.85, draw: 3.40, away: 4.20 }, hot: true },
+          { id: 2, league: "Premier League", homeTeam: "Arsenal", awayTeam: "Liverpool", score: "0-0", time: "15'", odds: { home: 2.10, draw: 3.10, away: 2.80 }, hot: true },
+          { id: 3, league: "La Liga", homeTeam: "Barcelona", awayTeam: "Atletico Madrid", score: "1-0", time: "45'", odds: { home: 1.65, draw: 3.80, away: 5.50 }, hot: false },
+        ]);
       } finally {
         setLoadingMatches(false);
       }
