@@ -15,16 +15,38 @@ export default function Web3TradingPage() {
   const [activeMarket, setActiveMarket] = useState("SOL/USD");
   const [orderType, setOrderType] = useState<"BUY" | "SELL">("BUY");
 
-  // Simulate Live Price Updates
+  // Connect to Pyth Network for Live SOL/USD Price
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentPrice((prev) => {
-        const p = parseFloat(prev);
-        const change = (Math.random() - 0.5) * 0.5;
-        return (p + change).toFixed(2);
-      });
-    }, 2000);
-    return () => clearInterval(interval);
+    let connection: any = null;
+    let isMounted = true;
+
+    const connectPyth = async () => {
+      try {
+        const { PriceServiceConnection } = await import("@pythnetwork/price-service-client");
+        connection = new PriceServiceConnection("https://hermes.pyth.network");
+        const solUsdId = "0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d"; // SOL/USD Price ID
+
+        await connection.subscribePriceFeedUpdates([solUsdId], (priceFeed: any) => {
+          if (!isMounted) return;
+          const price = priceFeed.getPriceUnchecked();
+          if (price) {
+            const actualPrice = Number(price.price) * Math.pow(10, price.expo);
+            setCurrentPrice(actualPrice.toFixed(3));
+          }
+        });
+      } catch (err) {
+        console.error("Pyth Network Error:", err);
+      }
+    };
+
+    connectPyth();
+
+    return () => {
+      isMounted = false;
+      if (connection) {
+        connection.closeWebSocket();
+      }
+    };
   }, []);
 
   return (

@@ -17,48 +17,41 @@ export default function SportsPage() {
     { name: "Voleybol", count: 18, icon: <Activity className="w-4 h-4" /> },
   ];
 
-  const liveMatches = [
-    {
-      id: 1,
-      league: "Şampiyonlar Ligi",
-      homeTeam: "Real Madrid",
-      awayTeam: "Manchester City",
-      score: "2 - 1",
-      time: "72'",
-      odds: { home: "1.85", draw: "3.40", away: "2.10" },
-      hot: true
-    },
-    {
-      id: 2,
-      league: "Premier League",
-      homeTeam: "Arsenal",
-      awayTeam: "Liverpool",
-      score: "0 - 0",
-      time: "45'",
-      odds: { home: "2.30", draw: "3.10", away: "2.50" },
-      hot: true
-    },
-    {
-      id: 3,
-      league: "Süper Lig",
-      homeTeam: "Galatasaray",
-      awayTeam: "Fenerbahçe",
-      score: "1 - 1",
-      time: "88'",
-      odds: { home: "1.45", draw: "4.20", away: "4.80" },
-      hot: true
-    },
-    {
-      id: 4,
-      league: "La Liga",
-      homeTeam: "Barcelona",
-      awayTeam: "Atletico Madrid",
-      score: "3 - 0",
-      time: "60'",
-      odds: { home: "1.12", draw: "6.50", away: "12.00" },
-      hot: false
-    }
-  ];
+  const [liveMatches, setLiveMatches] = useState<any[]>([]);
+  const [loadingMatches, setLoadingMatches] = useState(true);
+
+  useEffect(() => {
+    const fetchMatches = async () => {
+      try {
+        const { supabase } = await import("@/lib/supabase");
+        const { data, error } = await supabase
+          .from("sports_matches")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (!error && data) {
+          // Supabase'den gelen veriyi eski formata uyduruyoruz
+          const formatted = data.map((m: any) => ({
+            id: m.id,
+            league: m.league,
+            homeTeam: m.home_team,
+            awayTeam: m.away_team,
+            score: m.score,
+            time: m.match_time,
+            odds: { home: m.odds_home, draw: m.odds_draw, away: m.odds_away },
+            hot: m.is_hot
+          }));
+          setLiveMatches(formatted);
+        }
+      } catch (err) {
+        console.error("Supabase Error:", err);
+      } finally {
+        setLoadingMatches(false);
+      }
+    };
+
+    fetchMatches();
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans flex flex-col">
@@ -183,7 +176,11 @@ export default function SportsPage() {
 
           {/* Match List */}
           <div className="space-y-3">
-            {liveMatches.map((match) => (
+            {loadingMatches ? (
+              <div className="text-center py-10 text-gray-500">Canlı maçlar yükleniyor...</div>
+            ) : liveMatches.length === 0 ? (
+              <div className="text-center py-10 text-gray-500">Şu anda canlı maç bulunmuyor.</div>
+            ) : liveMatches.map((match) => (
               <div key={match.id} className="glass-premium border border-white/5 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 hover:border-[#16a34a]/30 transition-colors group">
                 <div className="flex items-center gap-4 w-full md:w-auto flex-1">
                   <div className="w-12 text-center shrink-0">

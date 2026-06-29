@@ -1,11 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Trophy, Gift, Timer, Users, Flame, ChevronRight, Star, Coins, Medal } from "lucide-react";
 
 export default function TournamentsPage() {
   const [activeTab, setActiveTab] = useState("AKTİF");
+  const [tournaments, setTournaments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTournaments = async () => {
+      try {
+        const { supabase } = await import("@/lib/supabase");
+        const { data, error } = await supabase
+          .from("tournaments")
+          .select("*")
+          .eq("is_active", true)
+          .order("created_at", { ascending: false });
+
+        if (!error && data) {
+          setTournaments(data);
+        }
+      } catch (err) {
+        console.error("Supabase Error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTournaments();
+  }, []);
 
   const leaderboard = [
     { rank: 1, user: "crypto_king", points: "2,450,000", prize: "$15,000", change: "up" },
@@ -119,61 +143,44 @@ export default function TournamentsPage() {
               <Star className="w-6 h-6 text-yellow-500" /> Öne Çıkan Turnuvalar
             </h3>
 
-            {/* Tournament Card */}
-            <div className="glass-premium border border-white/10 rounded-2xl p-6 relative overflow-hidden group hover:border-[#16a34a]/50 transition-colors">
-              <div className="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-[#16a34a]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            {loading ? (
+              <div className="text-center py-10 text-gray-500">Turnuvalar yükleniyor...</div>
+            ) : tournaments.length === 0 ? (
+              <div className="text-center py-10 text-gray-500">Şu anda aktif turnuva bulunmuyor.</div>
+            ) : tournaments.map((t, idx) => {
+              const isPurple = idx % 2 === 1;
+              const colorBase = isPurple ? "purple" : "amber";
+              const Icon = isPurple ? Coins : Gift;
               
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
-                <div className="flex items-center gap-6">
-                  <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-700/20 border border-amber-500/30 flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(245,158,11,0.1)]">
-                    <Gift className="w-10 h-10 text-amber-500" />
-                  </div>
-                  <div>
-                    <span className="text-[#16a34a] text-[10px] font-black uppercase tracking-widest bg-[#16a34a]/10 px-2 py-1 rounded border border-[#16a34a]/20 mb-2 inline-block">Haftalık Yarış</span>
-                    <h4 className="text-2xl font-black text-white mb-1">Slot İmparatorluğu</h4>
-                    <p className="text-gray-400 text-sm font-medium">Sadece Pragmatic Play oyunlarında geçerlidir.</p>
-                  </div>
-                </div>
+              return (
+                <div key={t.id} className={`glass-premium border border-white/10 rounded-2xl p-6 relative overflow-hidden group transition-colors hover:border-${colorBase}-500/50`}>
+                  <div className={`absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-${colorBase}-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity`}></div>
+                  
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+                    <div className="flex items-center gap-6">
+                      <div className={`w-20 h-20 rounded-xl bg-gradient-to-br from-${colorBase}-500/20 to-${colorBase}-700/20 border border-${colorBase}-500/30 flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(245,158,11,0.1)]`}>
+                        <Icon className={`w-10 h-10 text-${colorBase}-500`} />
+                      </div>
+                      <div>
+                        <span className={`text-${colorBase}-400 text-[10px] font-black uppercase tracking-widest bg-${colorBase}-500/10 px-2 py-1 rounded border border-${colorBase}-500/20 mb-2 inline-block`}>Yarış</span>
+                        <h4 className="text-2xl font-black text-white mb-1">{t.title}</h4>
+                        <p className="text-gray-400 text-sm font-medium">{t.description}</p>
+                      </div>
+                    </div>
 
-                <div className="flex flex-col md:flex-row items-center gap-6 w-full md:w-auto border-t border-white/5 pt-4 md:border-0 md:pt-0">
-                  <div className="text-center md:text-right">
-                    <p className="text-gray-500 text-[10px] font-bold uppercase mb-1">Ödül Havuzu</p>
-                    <p className="text-2xl font-black text-white text-gradient-green">$50,000</p>
-                  </div>
-                  <button className="w-full md:w-auto bg-white/5 hover:bg-[#16a34a] hover:text-black border border-white/10 hover:border-[#16a34a] px-8 py-3 rounded-xl font-bold transition-all">
-                    KATIL
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Tournament Card 2 */}
-            <div className="glass-premium border border-white/10 rounded-2xl p-6 relative overflow-hidden group hover:border-purple-500/50 transition-colors">
-              <div className="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
-                <div className="flex items-center gap-6">
-                  <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-700/20 border border-purple-500/30 flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(168,85,247,0.1)]">
-                    <Coins className="w-10 h-10 text-purple-500" />
-                  </div>
-                  <div>
-                    <span className="text-purple-400 text-[10px] font-black uppercase tracking-widest bg-purple-500/10 px-2 py-1 rounded border border-purple-500/20 mb-2 inline-block">Günlük Görev</span>
-                    <h4 className="text-2xl font-black text-white mb-1">Web3 Degens</h4>
-                    <p className="text-gray-400 text-sm font-medium">Trench Originals (Deep Needle) oyununda en yüksek çarpan.</p>
+                    <div className="flex flex-col md:flex-row items-center gap-6 w-full md:w-auto border-t border-white/5 pt-4 md:border-0 md:pt-0">
+                      <div className="text-center md:text-right">
+                        <p className="text-gray-500 text-[10px] font-bold uppercase mb-1">Ödül Havuzu</p>
+                        <p className={`text-2xl font-black text-white text-gradient-${colorBase}`}>${Number(t.prize_pool).toLocaleString()}</p>
+                      </div>
+                      <button className={`w-full md:w-auto bg-white/5 hover:bg-${colorBase}-500 hover:text-black border border-white/10 hover:border-${colorBase}-500 px-8 py-3 rounded-xl font-bold transition-all`}>
+                        KATIL
+                      </button>
+                    </div>
                   </div>
                 </div>
-
-                <div className="flex flex-col md:flex-row items-center gap-6 w-full md:w-auto border-t border-white/5 pt-4 md:border-0 md:pt-0">
-                  <div className="text-center md:text-right">
-                    <p className="text-gray-500 text-[10px] font-bold uppercase mb-1">Ödül Havuzu</p>
-                    <p className="text-2xl font-black text-white text-gradient-purple">$10,000</p>
-                  </div>
-                  <button className="w-full md:w-auto bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/30 px-8 py-3 rounded-xl font-bold transition-all text-gray-300">
-                    KATILDIN
-                  </button>
-                </div>
-              </div>
-            </div>
+              );
+            })}
 
           </div>
 

@@ -1,13 +1,39 @@
 "use client";
 
 import { AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function PositionsTable({ currentPrice }: { currentPrice: string | null }) {
-  // Mock data for display. In real app, fetch from Supabase.
-  const positions = [
-    { id: 1, type: "DEEP NEEDLE 10X", size: "1.5 SOL", entry: 142.50, liq: 128.25, pnl: "+15.4%" },
-    { id: 2, type: "DEAD CAT BOUNCE", size: "0.5 SOL", entry: 144.10, liq: 151.30, pnl: "-2.1%" },
-  ];
+  const [positions, setPositions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPositions = async () => {
+      try {
+        const { supabase } = await import("@/lib/supabase");
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          const { data, error } = await supabase
+            .from('trading_positions')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .eq('status', 'OPEN')
+            .order('created_at', { ascending: false });
+            
+          if (!error && data) {
+            setPositions(data);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching positions:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchPositions();
+  }, []);
 
   return (
     <div className="w-full h-full flex flex-col text-xs font-mono">
@@ -30,24 +56,41 @@ export default function PositionsTable({ currentPrice }: { currentPrice: string 
             </tr>
           </thead>
           <tbody>
-            {positions.map(pos => (
-              <tr key={pos.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                <td className="py-3 px-4 font-bold text-white">{pos.type}</td>
-                <td className="py-3 px-4 text-gray-300">{pos.size}</td>
-                <td className="py-3 px-4 text-gray-300">${pos.entry.toFixed(2)}</td>
-                <td className="py-3 px-4 text-amber-400 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> ${pos.liq.toFixed(2)}
-                </td>
-                <td className={`py-3 px-4 text-right font-bold ${pos.pnl.startsWith('+') ? 'text-green-400' : 'text-red-400'}`}>
-                  {pos.pnl}
-                </td>
-                <td className="py-3 px-4 text-right">
-                  <button className="bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 px-3 py-1 rounded transition-colors">
-                    KAPAT
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {positions.length === 0 ? (
+              <tr><td colSpan={6} className="text-center py-4 text-gray-500">Açık pozisyon yok.</td></tr>
+            ) : positions.map(pos => {
+              // Dinamik PNL Hesaplama (Basit)
+              const entry = Number(pos.entry_price);
+              const current = Number(currentPrice || entry);
+              const isLong = pos.type === 'LONG';
+              const pnlPercent = isLong ? ((current - entry) / entry) * pos.leverage * 100 : ((entry - current) / entry) * pos.leverage * 100;
+              const pnlStr = pnlPercent >= 0 ? `+${pnlPercent.toFixed(2)}%` : `${pnlPercent.toFixed(2)}%`;
+              
+              // Tahmini Likidasyon (Basit formül)
+              const liqPrice = isLong ? entry * (1 - 1/pos.leverage) : entry * (1 + 1/pos.leverage);
+
+              return (
+                <tr key={pos.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                  <td className="py-3 px-4 font-bold text-white flex gap-2 items-center">
+                    <span className={isLong ? "text-green-500" : "text-red-500"}>{pos.type}</span> 
+                    <span className="text-[10px] bg-white/10 px-1 rounded">{pos.leverage}x</span>
+                  </td>
+                  <td className="py-3 px-4 text-gray-300">{pos.size} SOL</td>
+                  <td className="py-3 px-4 text-gray-300">${entry.toFixed(2)}</td>
+                  <td className="py-3 px-4 text-amber-400 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> ${liqPrice.toFixed(2)}
+                  </td>
+                  <td className={`py-3 px-4 text-right font-bold ${pnlPercent >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {pnlStr}
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <button className="bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 px-3 py-1 rounded transition-colors">
+                      KAPAT
+                    </button>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>

@@ -1,96 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, Play, Users, Star, Flame, Trophy, ChevronRight, Filter } from "lucide-react";
 
 export default function LiveCasinoPage() {
   const [activeCategory, setActiveCategory] = useState("TÜMÜ");
+  const [liveGames, setLiveGames] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const categories = ["TÜMÜ", "ROULETTE", "BLACKJACK", "BACCARAT", "GAME SHOWS"];
 
-  const liveGames = [
-    {
-      id: 1,
-      title: "Lightning Roulette",
-      provider: "Evolution",
-      category: "ROULETTE",
-      image: "https://images.unsplash.com/photo-1605901309584-818e25960b8f?q=80&w=600",
-      players: 1420,
-      minBet: "$0.20",
-      hot: true
-    },
-    {
-      id: 2,
-      title: "Crazy Time",
-      provider: "Evolution",
-      category: "GAME SHOWS",
-      image: "https://images.unsplash.com/photo-1596838132731-3301c3fd4317?q=80&w=600",
-      players: 3850,
-      minBet: "$0.10",
-      hot: true
-    },
-    {
-      id: 3,
-      title: "Infinite Blackjack",
-      provider: "Evolution",
-      category: "BLACKJACK",
-      image: "https://images.unsplash.com/photo-1511516805178-06bbddab960e?q=80&w=600",
-      players: 850,
-      minBet: "$1.00",
-      hot: false
-    },
-    {
-      id: 4,
-      title: "XXXtreme Lightning Roulette",
-      provider: "Evolution",
-      category: "ROULETTE",
-      image: "https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?q=80&w=600",
-      players: 2100,
-      minBet: "$0.20",
-      hot: true
-    },
-    {
-      id: 5,
-      title: "Golden Wealth Baccarat",
-      provider: "Evolution",
-      category: "BACCARAT",
-      image: "https://images.unsplash.com/photo-1579227114347-15d08fc37cae?q=80&w=600",
-      players: 420,
-      minBet: "$1.00",
-      hot: false
-    },
-    {
-      id: 6,
-      title: "Monopoly Live",
-      provider: "Evolution",
-      category: "GAME SHOWS",
-      image: "https://images.unsplash.com/photo-1606093551532-6a9cb9fae977?q=80&w=600",
-      players: 1850,
-      minBet: "$0.10",
-      hot: false
-    },
-    {
-      id: 7,
-      title: "Immersive Roulette",
-      provider: "Evolution",
-      category: "ROULETTE",
-      image: "https://images.unsplash.com/photo-1551138379-399a5eeb5e91?q=80&w=600",
-      players: 630,
-      minBet: "$1.00",
-      hot: false
-    },
-    {
-      id: 8,
-      title: "Free Bet Blackjack",
-      provider: "Evolution",
-      category: "BLACKJACK",
-      image: "https://images.unsplash.com/photo-1623588958271-8c019027eca2?q=80&w=600",
-      players: 940,
-      minBet: "$1.00",
-      hot: false
-    }
-  ];
+  useEffect(() => {
+    const fetchGames = async () => {
+      try {
+        const { supabase } = await import("@/lib/supabase");
+        const { data, error } = await supabase
+          .from("casino_games")
+          .select("*")
+          .order("players_count", { ascending: false });
+
+        if (!error && data) {
+          const formatted = data.map((g: any) => ({
+            id: g.id,
+            title: g.title,
+            provider: g.provider,
+            category: g.category,
+            image: g.image_url,
+            players: g.players_count,
+            slug: g.slug,
+            minBet: "$1.00",
+            hot: g.players_count > 5000
+          }));
+          setLiveGames(formatted);
+        }
+      } catch (err) {
+        console.error("Supabase Error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchGames();
+  }, []);
 
   const filteredGames = activeCategory === "TÜMÜ" 
     ? liveGames 
@@ -175,7 +126,11 @@ export default function LiveCasinoPage() {
 
         {/* Live Games Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-          {filteredGames.map((game) => (
+          {loading ? (
+            <div className="col-span-full py-10 text-center text-gray-500">Canlı casino oyunları yükleniyor...</div>
+          ) : filteredGames.length === 0 ? (
+            <div className="col-span-full py-10 text-center text-gray-500">Bu kategoride oyun bulunamadı.</div>
+          ) : filteredGames.map((game) => (
             <div key={game.id} className="casino-card group block cursor-pointer relative overflow-hidden rounded-2xl border border-white/5 bg-[#0a0a0a]">
               {/* Hot Badge */}
               {game.hot && (
