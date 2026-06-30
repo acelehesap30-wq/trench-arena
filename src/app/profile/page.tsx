@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
-import { User, Wallet, Activity, History, ArrowUpRight, ArrowDownRight, RefreshCw, Crown } from "lucide-react";
+import { User, Wallet, Activity, History, ArrowUpRight, ArrowDownRight, RefreshCw, Crown, Trophy } from "lucide-react";
 
 export default function ProfilePage() {
   const { session, balance } = useAuth();
