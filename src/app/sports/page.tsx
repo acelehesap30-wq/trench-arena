@@ -212,7 +212,7 @@ export default function SportsPage() {
                 {/* Odds Buttons */}
                 <div className="flex gap-2 w-full md:w-auto shrink-0 mt-4 md:mt-0">
                   <button 
-                    onClick={() => addSelection(match.id, `${match.homeTeam} vs ${match.awayTeam}`, match.homeTeam, parseFloat(match.odds.home))}
+                    onClick={() => addSelection({ id: Date.now().toString() + Math.random().toString(), matchId: match.id, matchTitle: `${match.homeTeam} vs ${match.awayTeam}`, selection: match.homeTeam, odds: parseFloat(match.odds.home) })}
                     className={`flex-1 md:w-20 py-3 rounded-lg flex flex-col items-center justify-center border transition-all ${
                       isSelected(match.id, match.homeTeam) ? 'bg-[#16a34a] border-[#16a34a] text-black shadow-[0_0_15px_rgba(22,163,74,0.3)]' : 'bg-[#14151a] border-white/5 hover:border-[#16a34a]/50 text-gray-300 hover:text-white'
                     }`}
@@ -221,7 +221,7 @@ export default function SportsPage() {
                     <span className="font-mono font-bold text-sm">{match.odds.home}</span>
                   </button>
                   <button 
-                    onClick={() => addSelection(match.id, `${match.homeTeam} vs ${match.awayTeam}`, "Draw", parseFloat(match.odds.draw))}
+                    onClick={() => addSelection({ id: Date.now().toString() + Math.random().toString(), matchId: match.id, matchTitle: `${match.homeTeam} vs ${match.awayTeam}`, selection: "Draw", odds: parseFloat(match.odds.draw) })}
                     className={`flex-1 md:w-20 py-3 rounded-lg flex flex-col items-center justify-center border transition-all ${
                       isSelected(match.id, "Draw") ? 'bg-[#16a34a] border-[#16a34a] text-black shadow-[0_0_15px_rgba(22,163,74,0.3)]' : 'bg-[#14151a] border-white/5 hover:border-[#16a34a]/50 text-gray-300 hover:text-white'
                     }`}
@@ -230,7 +230,7 @@ export default function SportsPage() {
                     <span className="font-mono font-bold text-sm">{match.odds.draw}</span>
                   </button>
                   <button 
-                    onClick={() => addSelection(match.id, `${match.homeTeam} vs ${match.awayTeam}`, match.awayTeam, parseFloat(match.odds.away))}
+                    onClick={() => addSelection({ id: Date.now().toString() + Math.random().toString(), matchId: match.id, matchTitle: `${match.homeTeam} vs ${match.awayTeam}`, selection: match.awayTeam, odds: parseFloat(match.odds.away) })}
                     className={`flex-1 md:w-20 py-3 rounded-lg flex flex-col items-center justify-center border transition-all ${
                       isSelected(match.id, match.awayTeam) ? 'bg-[#16a34a] border-[#16a34a] text-black shadow-[0_0_15px_rgba(22,163,74,0.3)]' : 'bg-[#14151a] border-white/5 hover:border-[#16a34a]/50 text-gray-300 hover:text-white'
                     }`}
@@ -263,7 +263,7 @@ export default function SportsPage() {
                 selections.map((sel, idx) => (
                   <div key={idx} className="bg-[#14151a] border border-white/5 rounded-xl p-3 relative group">
                     <button 
-                      onClick={() => removeSelection(sel.matchId, sel.selection)}
+                      onClick={() => removeSelection(sel.id)}
                       className="absolute top-2 right-2 p-1 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
