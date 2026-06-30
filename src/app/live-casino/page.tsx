@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, Play, Users, Star, Flame, Trophy, ChevronRight, Filter } from "lucide-react";
+import Header from "@/components/Header";
 
 export default function LiveCasinoPage() {
   const [activeCategory, setActiveCategory] = useState("TÜMÜ");
@@ -18,6 +19,7 @@ export default function LiveCasinoPage() {
         const { data, error } = await supabase
           .from("casino_games")
           .select("*")
+          .in('category', ['ROULETTE', 'BLACKJACK', 'BACCARAT', 'GAME SHOWS', 'CRASH', 'ORIGINALS'])
           .order("players_count", { ascending: false });
 
         if (!error && data && data.length > 0) {
@@ -27,35 +29,17 @@ export default function LiveCasinoPage() {
             provider: g.provider,
             category: g.category,
             image: g.image_url,
-            players: g.players_count,
+            players: g.players_count || Math.floor(Math.random() * 2000) + 100, // Show random if 0 for demo purposes
             slug: g.slug,
-            minBet: "$1.00",
-            hot: g.players_count > 5000
+            minBet: `$${g.min_bet?.toFixed(2) || "1.00"}`,
+            hot: g.is_hot
           }));
           setLiveGames(formatted);
         } else {
-          setLiveGames([
-            { id: 99, title: "Trench Crash (Originals)", provider: "Trench", category: "ORIGINALS", image: "https://images.unsplash.com/photo-1639762681485-074b7f4ec139?q=80&w=600", players: 9850, minBet: "$1.00", hot: true, slug: "crash" },
-            { id: 1, title: "Lightning Roulette", provider: "Evolution", category: "ROULETTE", image: "https://images.unsplash.com/photo-1605901309584-818e25960b8f?q=80&w=600", players: 1420, minBet: "$0.20", hot: true },
-            { id: 2, title: "Crazy Time", provider: "Evolution", category: "GAME SHOWS", image: "https://images.unsplash.com/photo-1596838132731-3301c3fd4317?q=80&w=600", players: 3850, minBet: "$0.10", hot: true },
-            { id: 3, title: "Infinite Blackjack", provider: "Evolution", category: "BLACKJACK", image: "https://images.unsplash.com/photo-1511516805178-06bbddab960e?q=80&w=600", players: 850, minBet: "$1.00", hot: false },
-            { id: 4, title: "XXXtreme Lightning", provider: "Evolution", category: "ROULETTE", image: "https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?q=80&w=600", players: 2100, minBet: "$0.20", hot: true },
-            { id: 5, title: "Mega Roulette", provider: "Pragmatic Play", category: "ROULETTE", image: "https://images.unsplash.com/photo-1518972559570-7cc1309f3229?q=80&w=600", players: 1100, minBet: "$0.10", hot: true },
-            { id: 6, title: "Sweet Bonanza Candyland", provider: "Pragmatic Play", category: "GAME SHOWS", image: "https://images.unsplash.com/photo-1533558701576-23c65e0272fb?q=80&w=600", players: 5200, minBet: "$0.20", hot: true },
-            { id: 7, title: "ONE Blackjack", provider: "Pragmatic Play", category: "BLACKJACK", image: "https://images.unsplash.com/photo-1563214555-5f50f269a8b6?q=80&w=600", players: 900, minBet: "$1.00", hot: false },
-            { id: 8, title: "Speed Baccarat", provider: "Pragmatic Play", category: "BACCARAT", image: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?q=80&w=600", players: 1350, minBet: "$2.00", hot: false }
-          ]);
+          setLiveGames([]);
         }
       } catch (err) {
         console.error("Supabase Error:", err);
-        setLiveGames([
-            { id: 99, title: "Trench Crash (Originals)", provider: "Trench", category: "ORIGINALS", image: "https://images.unsplash.com/photo-1639762681485-074b7f4ec139?q=80&w=600", players: 9850, minBet: "$1.00", hot: true, slug: "crash" },
-            { id: 1, title: "Lightning Roulette", provider: "Evolution", category: "ROULETTE", image: "https://images.unsplash.com/photo-1605901309584-818e25960b8f?q=80&w=600", players: 1420, minBet: "$0.20", hot: true },
-            { id: 2, title: "Crazy Time", provider: "Evolution", category: "GAME SHOWS", image: "https://images.unsplash.com/photo-1596838132731-3301c3fd4317?q=80&w=600", players: 3850, minBet: "$0.10", hot: true },
-            { id: 3, title: "Infinite Blackjack", provider: "Evolution", category: "BLACKJACK", image: "https://images.unsplash.com/photo-1511516805178-06bbddab960e?q=80&w=600", players: 850, minBet: "$1.00", hot: false },
-            { id: 5, title: "Mega Roulette", provider: "Pragmatic Play", category: "ROULETTE", image: "https://images.unsplash.com/photo-1518972559570-7cc1309f3229?q=80&w=600", players: 1100, minBet: "$0.10", hot: true },
-            { id: 6, title: "Sweet Bonanza Candyland", provider: "Pragmatic Play", category: "GAME SHOWS", image: "https://images.unsplash.com/photo-1533558701576-23c65e0272fb?q=80&w=600", players: 5200, minBet: "$0.20", hot: true },
-        ]);
       } finally {
         setLoading(false);
       }
@@ -69,25 +53,7 @@ export default function LiveCasinoPage() {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans flex flex-col">
-      {/* Top Header */}
-      <header className="h-20 glass-premium border-b border-white/5 flex items-center justify-between px-6 sticky top-0 z-50">
-        <div className="flex items-center gap-8">
-          <Link href="/" className="text-3xl font-black tracking-tighter text-white hover:opacity-80 transition-opacity">
-            TRENCH<span className="text-[#16a34a]">BET</span>
-          </Link>
-          <nav className="hidden xl:flex items-center gap-8 text-sm font-extrabold tracking-wider text-gray-400">
-            <Link href="/sports" className="hover:text-white transition-colors">SPOR</Link>
-            <Link href="/live-casino" className="text-white border-b-2 border-[#16a34a] pb-7 pt-7">CANLI CASINO</Link>
-            <Link href="/tournaments" className="hover:text-white transition-colors">TURNUVALAR</Link>
-            <Link href="/polymarket" className="hover:text-white transition-colors">POLYMARKET</Link>
-          </nav>
-        </div>
-        <div className="flex items-center gap-4">
-          <button className="btn-premium px-6 py-2.5 text-sm mr-2 shadow-[0_0_15px_rgba(22,163,74,0.3)]">
-            KRİPTO YATIR
-          </button>
-        </div>
-      </header>
+      <Header />
 
       <div className="flex-1 w-full max-w-[1920px] mx-auto p-4 md:p-8">
         
@@ -150,9 +116,11 @@ export default function LiveCasinoPage() {
           {loading ? (
             <div className="col-span-full py-10 text-center text-gray-500">Canlı casino oyunları yükleniyor...</div>
           ) : filteredGames.length === 0 ? (
-            <div className="col-span-full py-10 text-center text-gray-500">Bu kategoride oyun bulunamadı.</div>
+            <div className="col-span-full py-20 text-center bg-[#0a0a0a] rounded-2xl border border-white/5">
+              <p className="text-gray-500 font-bold">Bu kategoride henüz oyun bulunmuyor.</p>
+            </div>
           ) : filteredGames.map((game) => (
-            <Link href={`/game/${game.slug || game.title.toLowerCase().replace(/ /g, '-')}`} key={game.id} className="casino-card group block cursor-pointer relative overflow-hidden rounded-2xl border border-white/5 bg-[#0a0a0a]">
+            <Link href={`/game/${game.slug}`} key={game.id} className="casino-card group block cursor-pointer relative overflow-hidden rounded-2xl border border-white/5 bg-[#0a0a0a]">
               {/* Hot Badge */}
               {game.hot && (
                 <div className="absolute top-3 left-3 z-20 bg-red-500 text-white text-[10px] font-black px-2 py-1 rounded shadow-[0_0_10px_rgba(239,68,68,0.6)] flex items-center gap-1">

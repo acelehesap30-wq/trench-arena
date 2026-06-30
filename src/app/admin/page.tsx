@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Users, DollarSign, Activity, Settings, LogOut, Loader2, Server, Check, X as XIcon, Clock, RefreshCcw } from "lucide-react";
+import { Users, DollarSign, Activity, Settings, LogOut, Loader2, Check, X as XIcon, RefreshCcw } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 
@@ -10,6 +10,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("KULLANICILAR");
   const [users, setUsers] = useState<any[]>([]);
   const [deposits, setDeposits] = useState<any[]>([]);
+  const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   
@@ -47,6 +48,17 @@ export default function AdminDashboard() {
         setPendingDepositsCount(depositsData.filter(d => d.status === 'PENDING').length);
       }
 
+      // Game History Logs
+      const { data: gameHistory, error: historyError } = await supabase
+        .from('game_history')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(25);
+        
+      if (!historyError && gameHistory) {
+        setLogs(gameHistory);
+      }
+
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -56,7 +68,6 @@ export default function AdminDashboard() {
 
   const handleDepositAction = async (depositId: string, userId: string, amount: number, action: 'APPROVED' | 'REJECTED') => {
     try {
-      // 1. Update Deposit Status
       const { error: depositError } = await supabase
         .from('deposits')
         .update({ status: action })
@@ -64,9 +75,7 @@ export default function AdminDashboard() {
         
       if (depositError) throw depositError;
 
-      // 2. If Approved, Add to User Balance
       if (action === 'APPROVED') {
-         // Get current balance
          const { data: profile } = await supabase.from('profiles').select('balance').eq('id', userId).single();
          const newBalance = (profile?.balance || 0) + amount;
          
@@ -79,7 +88,7 @@ export default function AdminDashboard() {
       }
 
       toast.success(`Yatırım işlemi ${action === 'APPROVED' ? 'onaylandı' : 'reddedildi'}.`);
-      fetchData(); // Refresh Data
+      fetchData();
 
     } catch (err: any) {
       toast.error("İşlem hatası: " + err.message);
@@ -259,9 +268,49 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {activeTab === "SİSTEM LOGLARI" && (
+            <div className="bg-[#0a0a0a] border border-white/5 rounded-2xl overflow-hidden">
+              <div className="p-6 border-b border-white/5 flex items-center justify-between">
+                <h2 className="text-lg font-black text-white">Son Aktiviteler (Casino)</h2>
+                <button onClick={fetchData} className="text-xs font-bold bg-white/5 px-4 py-2 rounded-lg hover:bg-white/10 transition-colors flex items-center gap-2">
+                  <RefreshCcw className="w-4 h-4" /> YENİLE
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="text-gray-500 bg-black/40">
+                      <th className="font-black text-xs uppercase tracking-widest py-4 px-6">Tarih</th>
+                      <th className="font-black text-xs uppercase tracking-widest py-4 px-6">Kullanıcı</th>
+                      <th className="font-black text-xs uppercase tracking-widest py-4 px-6">Oyun</th>
+                      <th className="font-black text-xs uppercase tracking-widest py-4 px-6">Bahis</th>
+                      <th className="font-black text-xs uppercase tracking-widest py-4 px-6">Kazanç</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loading ? (
+                      <tr><td colSpan={5} className="text-center py-10"><Loader2 className="w-6 h-6 animate-spin mx-auto text-[#16a34a]" /></td></tr>
+                    ) : logs.length === 0 ? (
+                      <tr><td colSpan={5} className="text-center py-10 text-gray-500 font-bold">Kayıtlı log bulunamadı.</td></tr>
+                    ) : logs.map(log => (
+                      <tr key={log.id} className="border-t border-white/5 hover:bg-white/5">
+                        <td className="py-4 px-6 text-gray-500 font-mono text-[10px]">{new Date(log.created_at).toLocaleString()}</td>
+                        <td className="py-4 px-6 text-gray-300 font-bold text-xs">{log.username || log.user_id.substring(0,8)}</td>
+                        <td className="py-4 px-6 text-white font-bold">{log.game_title}</td>
+                        <td className="py-4 px-6 text-gray-400 font-mono">${log.bet_amount.toFixed(2)}</td>
+                        <td className={`py-4 px-6 font-black font-mono ${log.win_amount > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          {log.win_amount > 0 ? '+' : ''}${log.win_amount.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
         </div>
       </main>
-
     </div>
   );
 }

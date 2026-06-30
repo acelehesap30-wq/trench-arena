@@ -1,302 +1,234 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { Trophy, Gift, Timer, Users, Flame, ChevronRight, Star, Coins, Medal } from "lucide-react";
+import { Trophy, Clock, Medal, Swords, Target, ChevronRight, Loader2 } from "lucide-react";
+import Header from "@/components/Header";
+import { supabase } from "@/lib/supabase";
 
 export default function TournamentsPage() {
-  const [activeTab, setActiveTab] = useState("AKTİF");
-  const [tournaments, setTournaments] = useState<any[]>([]);
+  const [activeTournament, setActiveTournament] = useState<any>(null);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [prizePool, setPrizePool] = useState<string>("Yükleniyor...");
-  const [participants, setParticipants] = useState<string>("...");
-  const [timeLeft, setTimeLeft] = useState<string>("");
+  const [timeLeft, setTimeLeft] = useState("");
 
+  // Countdown timer calculation
   useEffect(() => {
-    // Fetch real 24h Binance volume for Web3 Tournament data
-    const fetchRealTournamentData = async () => {
-      try {
-        const res = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT');
-        const data = await res.json();
-        if (data && data.quoteVolume) {
-          const volume = parseFloat(data.quoteVolume);
-          // Format as $XXX,XXX,XXX
-          setPrizePool(`$${Math.floor(volume / 100).toLocaleString('en-US')}`); // Divide by 100 to make it look like a massive prize pool rather than billions
-          setParticipants(data.count.toLocaleString('en-US'));
-        }
-      } catch (error) {
-        console.error("Error fetching tournament data:", error);
-        setPrizePool("$500,000");
-        setParticipants("14,205");
+    if (!activeTournament?.end_date) return;
+    
+    const timer = setInterval(() => {
+      const now = new Date().getTime();
+      const end = new Date(activeTournament.end_date).getTime();
+      const distance = end - now;
+
+      if (distance < 0) {
+        setTimeLeft("SÜRE BİTTİ");
+        clearInterval(timer);
+        return;
       }
-    };
 
-    fetchRealTournamentData();
-    const interval = setInterval(fetchRealTournamentData, 10000); // Update every 10 seconds
-
-    // Calculate time left until end of current month
-    const updateTimer = () => {
-      const now = new Date();
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-      const diff = endOfMonth.getTime() - now.getTime();
-      
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((diff / 1000 / 60) % 60);
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
       
       setTimeLeft(`${days}g ${hours}s ${minutes}d`);
-    };
+    }, 1000);
 
-    updateTimer();
-    const timerInterval = setInterval(updateTimer, 60000);
+    return () => clearInterval(timer);
+  }, [activeTournament]);
 
-    const fetchTournaments = async () => {
+  useEffect(() => {
+    const fetchTournamentData = async () => {
       try {
-        const { supabase } = await import("@/lib/supabase");
-        const { data, error } = await supabase
-          .from("tournaments")
-          .select("*")
-          .eq("is_active", true)
-          .order("created_at", { ascending: false });
+        // Fetch active tournament
+        const { data: tourneyData, error: tourneyError } = await supabase
+          .from('tournaments')
+          .select('*')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+          
+        if (tourneyError) throw tourneyError;
+        if (!tourneyData) {
+          setLoading(false);
+          return;
+        }
+        
+        setActiveTournament(tourneyData);
 
-        if (!error && data && data.length > 0) {
-          setTournaments(data);
-        } else {
-          setTournaments([
-            { id: "1", title: "Slot İmparatorluğu", description: "Sadece Pragmatic Play oyunlarında geçerlidir.", prize_pool: "50000" },
-            { id: "2", title: "Web3 Degens", description: "Trench Originals (Deep Needle) oyununda en yüksek çarpan.", prize_pool: "10000" }
-          ]);
+        // Fetch leaderboard for this tournament
+        const { data: entriesData, error: entriesError } = await supabase
+          .from('tournament_entries')
+          .select('*')
+          .eq('tournament_id', tourneyData.id)
+          .order('points', { ascending: false })
+          .limit(10);
+          
+        if (!entriesError && entriesData) {
+          setLeaderboard(entriesData);
         }
       } catch (err) {
-        console.error("Supabase Error:", err);
-        setTournaments([
-          { id: "1", title: "Slot İmparatorluğu", description: "Sadece Pragmatic Play oyunlarında geçerlidir.", prize_pool: "50000" },
-          { id: "2", title: "Web3 Degens", description: "Trench Originals (Deep Needle) oyununda en yüksek çarpan.", prize_pool: "10000" }
-        ]);
+        console.error("Tournament fetch error:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchTournaments();
+    
+    fetchTournamentData();
   }, []);
-
-  const leaderboard = [
-    { rank: 1, user: "crypto_king", points: "2,450,000", prize: "$15,000", change: "up" },
-    { rank: 2, user: "sol_whale_99", points: "1,850,200", prize: "$8,000", change: "same" },
-    { rank: 3, user: "trench_master", points: "1,205,500", prize: "$5,000", change: "up" },
-    { rank: 4, user: "lucky_strike", points: "980,000", prize: "$2,000", change: "down" },
-    { rank: 5, user: "degen_trader", points: "850,400", prize: "$1,000", change: "up" },
-    { rank: 6, user: "moon_boi", points: "720,100", prize: "$500", change: "down" },
-    { rank: 7, user: "ape_life", points: "650,000", prize: "$500", change: "same" },
-    { rank: 8, user: "diamond_hands", points: "590,200", prize: "$500", change: "up" },
-  ];
 
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans flex flex-col">
-      {/* Top Header */}
-      <header className="h-20 glass-premium border-b border-white/5 flex items-center justify-between px-6 sticky top-0 z-50">
-        <div className="flex items-center gap-8">
-          <Link href="/" className="text-3xl font-black tracking-tighter text-white hover:opacity-80 transition-opacity">
-            TRENCH<span className="text-[#16a34a]">BET</span>
-          </Link>
-          <nav className="hidden xl:flex items-center gap-8 text-sm font-extrabold tracking-wider text-gray-400">
-            <Link href="/sports" className="hover:text-white transition-colors">SPOR</Link>
-            <Link href="/live-casino" className="hover:text-white transition-colors">CANLI CASINO</Link>
-            <Link href="/tournaments" className="text-white border-b-2 border-[#16a34a] pb-7 pt-7">TURNUVALAR</Link>
-            <Link href="/polymarket" className="hover:text-white transition-colors">POLYMARKET</Link>
-          </nav>
-        </div>
-        <div className="flex items-center gap-4">
-          <button className="btn-premium px-6 py-2.5 text-sm mr-2 shadow-[0_0_15px_rgba(22,163,74,0.3)]">
-            KRİPTO YATIR
-          </button>
-        </div>
-      </header>
+      <Header />
 
       <div className="flex-1 w-full max-w-[1920px] mx-auto p-4 md:p-8">
         
-        {/* Main Tournament Banner */}
-        <div className="w-full h-[350px] rounded-3xl mb-12 relative overflow-hidden flex items-center p-8 md:p-12 group border border-white/10 shadow-[0_0_50px_rgba(22,163,74,0.1)]">
-          {/* Background Image & Effects */}
+        {/* Tournament Hero Banner */}
+        <div className="w-full h-[400px] rounded-3xl mb-12 relative overflow-hidden flex items-center px-10 group shadow-2xl border border-[#d4af37]/20">
           <div 
-            className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-105"
+            className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-105 opacity-60"
             style={{ backgroundImage: "url('https://images.unsplash.com/photo-1518972559570-7cc1309f3229?q=80&w=2070')" }}
           ></div>
           <div className="absolute inset-0 bg-gradient-to-r from-black via-black/90 to-transparent"></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#d4af37]/10 via-transparent to-transparent"></div>
           
-          <div className="relative z-10 w-full flex flex-col md:flex-row justify-between items-center gap-8">
-            <div className="max-w-2xl">
-              <span className="inline-flex items-center gap-2 py-1 px-3 rounded bg-amber-500/20 text-amber-500 border border-amber-500/30 text-[10px] font-black mb-4 uppercase tracking-widest">
-                <Trophy className="w-3 h-3" /> Aylık Büyük Turnuva
-              </span>
-              <h1 className="text-5xl md:text-7xl font-black text-white mb-4 leading-[1.1] tracking-tight">
-                HAZIRLAN. <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-600">SAVAŞ.</span> KAZAN.
-              </h1>
-              <p className="text-gray-300 text-base md:text-lg mb-8 max-w-xl font-medium">
-                Bu ayın en çok kazandıran slotlarında oyna, liderlik tablosunda yüksel ve dev ödül havuzundan payını al.
-              </p>
-              
-              <div className="flex items-center gap-4">
-                <button className="btn-premium px-8 py-3 text-sm shadow-[0_0_20px_rgba(22,163,74,0.4)] flex items-center gap-2">
-                  <Flame className="w-4 h-4" /> HEMEN KATIL
-                </button>
-              </div>
-            </div>
-
-            {/* Prize Pool Info Box */}
-            <div className="glass-premium border border-white/10 p-6 rounded-2xl w-full md:w-auto min-w-[300px] flex flex-col items-center justify-center relative overflow-hidden">
-              <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/20 blur-[50px] rounded-full pointer-events-none"></div>
-              <p className="text-gray-400 font-black uppercase tracking-widest text-xs mb-2">TOPLAM ÖDÜL HAVUZU</p>
-              <h2 className="text-5xl font-black text-white mb-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] text-gradient-green">{prizePool}</h2>
-              
-              <div className="w-full flex justify-between items-center border-t border-white/10 pt-4">
-                <div className="flex flex-col items-center">
-                  <span className="text-gray-500 text-[10px] font-bold uppercase mb-1">Kalan Süre</span>
-                  <div className="flex items-center gap-1 text-white font-bold bg-white/5 px-3 py-1.5 rounded-lg border border-white/10">
-                    <Timer className="w-4 h-4 text-amber-500" /> {timeLeft}
-                  </div>
-                </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-gray-500 text-[10px] font-bold uppercase mb-1">Katılımcı</span>
-                  <div className="flex items-center gap-1 text-white font-bold bg-white/5 px-3 py-1.5 rounded-lg border border-white/10">
-                    <Users className="w-4 h-4 text-blue-500" /> {participants}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Content Tabs */}
-        <div className="flex items-center gap-4 mb-8 border-b border-white/5 pb-4">
-          <button 
-            onClick={() => setActiveTab("AKTİF")}
-            className={`text-sm font-black px-6 py-3 rounded-xl transition-all tracking-wider ${activeTab === 'AKTİF' ? 'bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.2)]' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
-          >
-            AKTİF TURNUVALAR
-          </button>
-          <button 
-            onClick={() => setActiveTab("GEÇMİŞ")}
-            className={`text-sm font-black px-6 py-3 rounded-xl transition-all tracking-wider ${activeTab === 'GEÇMİŞ' ? 'bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.2)]' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
-          >
-            GEÇMİŞ
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          
-          {/* Left Column: Tournaments List */}
-          <div className="xl:col-span-2 space-y-6">
+          <div className="relative z-10 max-w-3xl">
+            <span className="inline-flex items-center gap-2 py-1 px-3 rounded bg-[#d4af37]/10 text-[#d4af37] border border-[#d4af37]/30 text-xs font-black mb-6 uppercase tracking-widest shadow-xl">
+              <Trophy className="w-4 h-4" /> AYLIK BÜYÜK TURNUVA
+            </span>
+            <h1 className="text-5xl md:text-7xl font-black text-white mb-4 leading-[1.1] tracking-tight drop-shadow-lg">
+              {activeTournament ? activeTournament.title : "SLOT İMPARATORLUĞU"}
+            </h1>
+            <p className="text-gray-300 text-lg mb-8 max-w-xl font-medium">
+              {activeTournament ? activeTournament.description : "En yüksek çarpanı yakala, sıralamada yüksel ve büyük ödül havuzundan payını al."}
+            </p>
             
-            <h3 className="text-xl font-black text-white flex items-center gap-2 mb-4">
-              <Star className="w-6 h-6 text-yellow-500" /> Öne Çıkan Turnuvalar
-            </h3>
-
-            {loading ? (
-              <div className="text-center py-10 text-gray-500">Turnuvalar yükleniyor...</div>
-            ) : tournaments.length === 0 ? (
-              <div className="text-center py-10 text-gray-500">Şu anda aktif turnuva bulunmuyor.</div>
-            ) : tournaments.map((t, idx) => {
-              const isPurple = idx % 2 === 1;
-              const colorBase = isPurple ? "purple" : "amber";
-              const Icon = isPurple ? Coins : Gift;
-              
-              return (
-                <div key={t.id} className={`glass-premium border border-white/10 rounded-2xl p-6 relative overflow-hidden group transition-colors hover:border-${colorBase}-500/50`}>
-                  <div className={`absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-${colorBase}-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity`}></div>
-                  
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
-                    <div className="flex items-center gap-6">
-                      <div className={`w-20 h-20 rounded-xl bg-gradient-to-br from-${colorBase}-500/20 to-${colorBase}-700/20 border border-${colorBase}-500/30 flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(245,158,11,0.1)]`}>
-                        <Icon className={`w-10 h-10 text-${colorBase}-500`} />
-                      </div>
-                      <div>
-                        <span className={`text-${colorBase}-400 text-[10px] font-black uppercase tracking-widest bg-${colorBase}-500/10 px-2 py-1 rounded border border-${colorBase}-500/20 mb-2 inline-block`}>Yarış</span>
-                        <h4 className="text-2xl font-black text-white mb-1">{t.title}</h4>
-                        <p className="text-gray-400 text-sm font-medium">{t.description}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col md:flex-row items-center gap-6 w-full md:w-auto border-t border-white/5 pt-4 md:border-0 md:pt-0">
-                      <div className="text-center md:text-right">
-                        <p className="text-gray-500 text-[10px] font-bold uppercase mb-1">Ödül Havuzu</p>
-                        <p className={`text-2xl font-black text-white text-gradient-${colorBase}`}>${Number(t.prize_pool).toLocaleString()}</p>
-                      </div>
-                      <button className={`w-full md:w-auto bg-white/5 hover:bg-${colorBase}-500 hover:text-black border border-white/10 hover:border-${colorBase}-500 px-8 py-3 rounded-xl font-bold transition-all`}>
-                        KATIL
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-
+            <div className="flex flex-wrap items-center gap-6">
+              <div className="bg-[#0a0a0a]/80 backdrop-blur border border-white/10 rounded-2xl p-4 flex flex-col">
+                <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">ÖDÜL HAVUZU</span>
+                <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#d4af37] to-yellow-300">
+                  {loading ? (
+                    <Loader2 className="w-6 h-6 animate-spin text-[#d4af37]" />
+                  ) : activeTournament ? (
+                    `$${activeTournament.prize_pool.toLocaleString()}`
+                  ) : (
+                    "-$0"
+                  )}
+                </span>
+              </div>
+              <div className="bg-[#0a0a0a]/80 backdrop-blur border border-white/10 rounded-2xl p-4 flex flex-col min-w-[150px]">
+                <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> KALAN SÜRE
+                </span>
+                <span className="text-2xl font-black text-white font-mono">{timeLeft || "--:--"}</span>
+              </div>
+              <button className="btn-premium bg-gradient-to-r from-[#d4af37] to-yellow-600 px-8 py-5 text-black shadow-[0_0_30px_rgba(212,175,55,0.4)] border-none">
+                KATILIM SAĞLA
+              </button>
+            </div>
           </div>
+          
+          {/* Big Trophy Decoration */}
+          <div className="absolute right-10 -bottom-10 opacity-20 pointer-events-none scale-150 transform rotate-12">
+            <Trophy className="w-96 h-96 text-[#d4af37]" />
+          </div>
+        </div>
 
-          {/* Right Column: Leaderboard */}
-          <div className="xl:col-span-1">
-            <div className="glass-premium border border-white/10 rounded-2xl overflow-hidden sticky top-28">
-              <div className="bg-gradient-to-r from-[#16a34a]/20 to-transparent p-6 border-b border-white/5">
-                <h3 className="text-xl font-black text-white flex items-center gap-2">
-                  <Medal className="w-6 h-6 text-[#16a34a]" /> Canlı Leaderboard
-                </h3>
-                <p className="text-gray-400 text-xs font-bold mt-1">Aylık Büyük Turnuva - Son Güncelleme: Az Önce</p>
-              </div>
+        {/* Content Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Main Column - Leaderboard */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-black text-white flex items-center gap-3">
+                <Medal className="w-6 h-6 text-[#d4af37]" /> LİDERLİK TABLOSU
+              </h2>
+              <span className="text-sm text-gray-500 font-bold">{leaderboard.length} Katılımcı</span>
+            </div>
 
-              <div className="p-2">
-                {/* Table Header */}
-                <div className="flex items-center justify-between p-3 text-[10px] font-black text-gray-500 uppercase tracking-widest border-b border-white/5">
-                  <div className="flex items-center gap-4">
-                    <span className="w-6 text-center">#</span>
-                    <span>Kullanıcı</span>
-                  </div>
-                  <div className="flex items-center gap-8">
-                    <span>Puan</span>
-                    <span className="w-16 text-right">Ödül</span>
-                  </div>
-                </div>
-
-                {/* Table Rows */}
-                <div className="space-y-1 mt-2">
-                  {leaderboard.map((player) => (
-                    <div 
-                      key={player.rank} 
-                      className={`flex items-center justify-between p-3 rounded-xl transition-colors ${
-                        player.rank === 1 ? 'bg-amber-500/10 border border-amber-500/20' : 
-                        player.rank === 2 ? 'bg-gray-300/10 border border-gray-300/20' : 
-                        player.rank === 3 ? 'bg-orange-700/10 border border-orange-700/20' : 
-                        'hover:bg-white/5 border border-transparent'
-                      }`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <span className={`w-6 text-center font-black ${
-                          player.rank === 1 ? 'text-amber-500' : 
-                          player.rank === 2 ? 'text-gray-300' : 
-                          player.rank === 3 ? 'text-orange-500' : 
-                          'text-gray-500'
-                        }`}>{player.rank}</span>
-                        <span className="text-white font-bold text-sm truncate max-w-[100px]">{player.user}</span>
-                      </div>
-                      <div className="flex items-center gap-6">
-                        <span className="text-gray-300 font-mono text-xs">{player.points}</span>
-                        <span className={`w-16 text-right font-black text-sm ${player.rank <= 3 ? 'text-[#16a34a]' : 'text-gray-400'}`}>
-                          {player.prize}
-                        </span>
-                      </div>
-                    </div>
+            <div className="bg-[#0a0a0a] border border-white/5 rounded-2xl overflow-hidden shadow-xl">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-[#14151a] border-b border-white/5 text-xs text-gray-500 uppercase tracking-widest">
+                    <th className="py-4 px-6 font-bold w-20">Sıra</th>
+                    <th className="py-4 px-6 font-bold">Oyuncu</th>
+                    <th className="py-4 px-6 font-bold text-right">Puan (Çarpan)</th>
+                    <th className="py-4 px-6 font-bold text-right text-[#d4af37]">Ödül</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={4} className="py-10 text-center text-gray-500"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></td>
+                    </tr>
+                  ) : leaderboard.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-10 text-center text-gray-500 font-bold">Henüz katılımcı yok. İlk sen ol!</td>
+                    </tr>
+                  ) : leaderboard.map((entry, index) => (
+                    <tr key={entry.id} className="border-b border-white/5 hover:bg-white/5 transition-colors group">
+                      <td className="py-4 px-6">
+                        {index === 0 ? <Medal className="w-6 h-6 text-[#d4af37]" /> :
+                         index === 1 ? <Medal className="w-6 h-6 text-gray-400" /> :
+                         index === 2 ? <Medal className="w-6 h-6 text-amber-700" /> :
+                         <span className="text-gray-500 font-mono font-bold w-6 text-center inline-block">{index + 1}</span>}
+                      </td>
+                      <td className="py-4 px-6 font-bold text-gray-300 group-hover:text-white transition-colors">
+                        {entry.username || 'Gizli Oyuncu'}
+                      </td>
+                      <td className="py-4 px-6 text-right font-mono text-white">
+                        {Number(entry.points).toFixed(2)}x
+                      </td>
+                      <td className="py-4 px-6 text-right font-bold text-[#d4af37]">
+                        {entry.prize}
+                      </td>
+                    </tr>
                   ))}
-                </div>
-
-                <button className="w-full mt-4 p-3 text-xs font-bold text-gray-400 hover:text-white transition-colors flex items-center justify-center gap-1">
-                  TÜM LİSTEYİ GÖR <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
+                </tbody>
+              </table>
             </div>
           </div>
 
-        </div>
+          {/* Sidebar - Rules & Active Tourneys */}
+          <div className="space-y-6">
+            <div className="bg-[#0a0a0a] border border-white/5 rounded-2xl p-6 shadow-xl">
+              <h3 className="text-lg font-black text-white flex items-center gap-2 mb-6">
+                <Swords className="w-5 h-5 text-[#16a34a]" /> KURALLAR
+              </h3>
+              <ul className="space-y-4 text-sm text-gray-400">
+                <li className="flex items-start gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#16a34a] mt-1.5 shrink-0"></div>
+                  <p>Sadece seçili Pragmatic Play ve Originals oyunları geçerlidir.</p>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#16a34a] mt-1.5 shrink-0"></div>
+                  <p>Minimum bahis tutarı <strong>$0.20</strong> olmalıdır.</p>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#16a34a] mt-1.5 shrink-0"></div>
+                  <p>Puanlama: Elde edilen <strong>en yüksek çarpan</strong> puanınız olarak kaydedilir.</p>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#16a34a] mt-1.5 shrink-0"></div>
+                  <p>Turnuva bitiminde ödüller 24 saat içinde cüzdanlara otomatik aktarılır.</p>
+                </li>
+              </ul>
+            </div>
 
+            <div className="bg-gradient-to-br from-[#16a34a]/10 to-[#050505] border border-[#16a34a]/20 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+              <div className="absolute right-0 top-0 opacity-10 pointer-events-none">
+                <Target className="w-32 h-32" />
+              </div>
+              <h3 className="text-sm font-black text-white mb-2">NASIL ÇALIŞIR?</h3>
+              <p className="text-xs text-gray-400 mb-4 leading-relaxed">
+                Trench Arena akıllı sözleşmeleri, her bahsi zincir üzerinde doğrular. Skor tablosu manipüle edilemez ve ödül dağıtımı otomatik gerçekleşir.
+              </p>
+              <button className="text-xs font-bold text-[#16a34a] hover:text-white transition-colors flex items-center gap-1">
+                DOKÜMANTASYONU OKU <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

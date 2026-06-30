@@ -1,197 +1,260 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { ArrowLeft, Activity, Search, Star, Filter, ArrowUpRight, ArrowDownRight, TrendingUp } from "lucide-react";
-import dynamic from "next/dynamic";
+import { Activity, ShieldAlert, ArrowUpRight, ArrowDownRight, Settings2, Wallet } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { useState, useEffect } from 'react';
+import usePythPrice from '@/hooks/usePythPrice';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
+import toast from 'react-hot-toast';
+import Header from '@/components/Header';
 
-// Dynamic imports for charts to avoid SSR issues
-const TradingViewChart = dynamic(() => import("@/components/TradingViewChart"), { ssr: false });
-const OrderBook = dynamic(() => import("@/components/OrderBook"), { ssr: false });
-const PositionsTable = dynamic(() => import("@/components/PositionsTable"), { ssr: false });
+// Dinamik yüklenen bileşenler (SSR hatası vermemesi için)
+const TradingViewChart = dynamic(() => import('@/components/TradingViewChart'), { ssr: false });
+const OrderBook = dynamic(() => import('@/components/OrderBook'), { ssr: false });
+const PositionsTable = dynamic(() => import('@/components/PositionsTable'), { ssr: false });
+const LiquidationFeed = dynamic(() => import('@/components/LiquidationFeed'), { ssr: false });
 
 export default function Web3TradingPage() {
-  const [currentPrice, setCurrentPrice] = useState<string>("0.00");
-  const [activeMarket, setActiveMarket] = useState("SOL/USD");
-  const [orderType, setOrderType] = useState<"BUY" | "SELL">("BUY");
+  const { currentPrice, priceChange, loading: pythLoading } = usePythPrice();
+  const { session, balance } = useAuth();
+  
+  const [leverage, setLeverage] = useState(10);
+  const [amount, setAmount] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Binance 24h Stats
+  const [marketStats, setMarketStats] = useState({ volume: 0, changePercent: 0 });
 
-  // Connect to Pyth Network for Live SOL/USD Price
   useEffect(() => {
-    let connection: any = null;
-    let isMounted = true;
-
-    const connectPyth = async () => {
+    const fetchMarketStats = async () => {
       try {
-        const { PriceServiceConnection } = await import("@pythnetwork/price-service-client");
-        connection = new PriceServiceConnection("https://hermes.pyth.network");
-        const solUsdId = "0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d"; // SOL/USD Price ID
-
-        await connection.subscribePriceFeedUpdates([solUsdId], (priceFeed: any) => {
-          if (!isMounted) return;
-          const price = priceFeed.getPriceUnchecked();
-          if (price) {
-            const actualPrice = Number(price.price) * Math.pow(10, price.expo);
-            setCurrentPrice(actualPrice.toFixed(3));
-          }
+        const res = await fetch('/api/binance/ticker?symbol=SOLUSDT');
+        const data = await res.json();
+        setMarketStats({
+          volume: parseFloat(data.quoteVolume) || 0,
+          changePercent: parseFloat(data.priceChangePercent) || 0
         });
       } catch (err) {
-        console.error("Pyth Network Error:", err);
+        console.error("Failed to fetch market stats:", err);
       }
     };
-
-    connectPyth();
-
-    return () => {
-      isMounted = false;
-      if (connection) {
-        connection.closeWebSocket();
-      }
-    };
+    
+    fetchMarketStats();
+    const interval = setInterval(fetchMarketStats, 10000); // 10s'de bir güncelle
+    return () => clearInterval(interval);
   }, []);
+
+  const handleTrade = async (type: 'LONG' | 'SHORT') => {
+    if (!session) {
+      toast.error("Lütfen giriş yapın.");
+      return;
+    }
+    
+    const tradeAmount = parseFloat(amount);
+    if (!tradeAmount || tradeAmount <= 0) {
+      toast.error("Geçerli bir miktar girin.");
+      return;
+    }
+
+    if (tradeAmount > balance) {
+      toast.error("Yetersiz bakiye.");
+      return;
+    }
+    
+    if (!currentPrice) {
+      toast.error("Fiyat bekleniyor, lütfen bekleyin.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      const entryPrice = parseFloat(currentPrice);
+      
+      const { error } = await supabase
+        .from('trading_positions')
+        .insert({
+          user_id: session.user.id,
+          type,
+          asset: 'SOL/USD',
+          size: tradeAmount, // Burada basitlik adına USD miktarını margin olarak kaydedip size'ı aynı alıyoruz (demo amaçlı)
+          entry_price: entryPrice,
+          leverage,
+          status: 'OPEN'
+        });
+
+      if (error) throw error;
+      
+      toast.success(`${leverage}x ${type} pozisyonu başarıyla açıldı!`);
+      setAmount("");
+    } catch (err: any) {
+      toast.error("Hata: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const formatVolume = (vol: number) => {
+    if (vol > 1000000) return `$${(vol / 1000000).toFixed(1)}M`;
+    if (vol > 1000) return `$${(vol / 1000).toFixed(1)}K`;
+    return `$${vol.toFixed(0)}`;
+  };
 
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans flex flex-col h-screen overflow-hidden">
-      
-      {/* Top Header - Trading Specific */}
-      <header className="h-16 glass-premium border-b border-white/5 flex items-center justify-between px-4 shrink-0 z-50">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="text-2xl font-black tracking-tighter text-white hover:opacity-80 transition-opacity">
-            TRENCH<span className="text-[#16a34a]">BET</span>
-          </Link>
-          <div className="h-6 w-px bg-white/10 hidden md:block"></div>
-          
-          {/* Market Info */}
-          <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 hover:bg-white/5 px-3 py-1.5 rounded-lg transition-colors">
-              <Star className="w-4 h-4 text-gray-500" />
-              <span className="font-black text-lg">{activeMarket}</span>
-            </button>
-            <div className="flex flex-col">
-              <span className={`text-sm font-black ${parseFloat(currentPrice) > 145 ? 'text-[#16a34a]' : 'text-red-500'}`}>
-                ${currentPrice}
-              </span>
-              <span className="text-[10px] text-gray-500 font-bold">$24.5M Vol</span>
-            </div>
-            <div className="hidden md:flex flex-col ml-4">
-              <span className="text-[10px] text-gray-500 font-bold uppercase">24h Değişim</span>
-              <span className="text-xs font-black text-[#16a34a] flex items-center gap-0.5">
-                <ArrowUpRight className="w-3 h-3" /> +5.24%
-              </span>
-            </div>
-          </div>
-        </div>
+      <Header />
 
-        <div className="flex items-center gap-4">
-          <button className="bg-white/5 hover:bg-white/10 text-white font-bold text-sm px-4 py-2 rounded-lg transition-all border border-white/10">
-            CÜZDAN BAĞLA
-          </button>
-        </div>
-      </header>
-
-      {/* Main Trading Layout */}
-      <div className="flex-1 flex flex-col xl:flex-row overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row w-full max-w-[2560px] mx-auto overflow-hidden">
         
-        {/* Left/Center Column: Chart & Positions */}
-        <div className="flex-1 flex flex-col min-w-0 border-r border-white/5">
-          {/* Chart Section */}
-          <div className="h-[60%] border-b border-white/5 relative bg-[#0a0a0a]">
-             {/* Chart Controls */}
-             <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-black/50 backdrop-blur border border-white/5 p-1 rounded-lg">
-                {['1m', '5m', '15m', '1H', '4H', '1D'].map(time => (
-                  <button key={time} className="text-xs font-bold px-2 py-1 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors">
-                    {time}
-                  </button>
-                ))}
-             </div>
-             <TradingViewChart currentPrice={currentPrice} />
+        {/* Sol Panel: OrderBook & Market Info */}
+        <div className="w-full lg:w-80 border-r border-white/5 flex flex-col bg-[#0a0a0a] shrink-0">
+          {/* Market Info */}
+          <div className="p-4 border-b border-white/5 bg-[#050505]">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center p-1.5 border border-white/10">
+                  <img src="https://cryptologos.cc/logos/solana-sol-logo.svg?v=029" alt="SOL" className="w-full h-full" />
+                </div>
+                <div>
+                  <h2 className="font-black text-lg leading-none">SOL-PERP</h2>
+                  <a href="https://pyth.network" target="_blank" rel="noreferrer" className="text-[9px] text-[#b084e9] hover:underline font-bold">Pyth Network Oracle</a>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-[10px] text-gray-500 font-bold tracking-wider mb-1">MARKET FİYATI</p>
+                <div className="flex items-center gap-2">
+                  <span className={`text-lg font-mono font-black ${
+                    priceChange === 'up' ? 'text-green-500' : priceChange === 'down' ? 'text-red-500' : 'text-white'
+                  }`}>
+                    {currentPrice ? `$${currentPrice}` : '---.--'}
+                  </span>
+                  {priceChange === 'up' && <ArrowUpRight className="w-4 h-4 text-green-500" />}
+                  {priceChange === 'down' && <ArrowDownRight className="w-4 h-4 text-red-500" />}
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] text-gray-500 font-bold tracking-wider mb-1">24S DEĞİŞİM</p>
+                <span className={`text-sm font-mono font-bold ${marketStats.changePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {marketStats.changePercent >= 0 ? '+' : ''}{marketStats.changePercent.toFixed(2)}%
+                </span>
+              </div>
+            </div>
           </div>
           
-          {/* Positions Section */}
-          <div className="flex-1 bg-[#0a0a0a] overflow-hidden flex flex-col">
-            <div className="flex items-center gap-4 px-4 py-3 border-b border-white/5 bg-[#050505]">
-               <button className="text-sm font-black text-white border-b-2 border-[#16a34a] pb-1">POZİSYONLAR (2)</button>
-               <button className="text-sm font-bold text-gray-500 hover:text-white transition-colors pb-1">AÇIK EMİRLER (0)</button>
-               <button className="text-sm font-bold text-gray-500 hover:text-white transition-colors pb-1">GEÇMİŞ</button>
-            </div>
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
-              <PositionsTable currentPrice={currentPrice} />
-            </div>
+          <div className="p-2 border-b border-white/5 flex justify-between text-[10px] font-bold text-gray-500">
+            <span>24H HACİM: <span className="text-white">{formatVolume(marketStats.volume)}</span></span>
+            <span>FONLAMA: <span className="text-yellow-500">0.01%</span></span>
+          </div>
+
+          <div className="flex-1 overflow-hidden">
+            <OrderBook currentPrice={currentPrice} />
           </div>
         </div>
 
-        {/* Right Column: OrderBook & Order Entry */}
-        <div className="w-full xl:w-[320px] flex flex-col shrink-0 bg-[#0a0a0a]">
+        {/* Orta Panel: Grafik ve Pozisyonlar */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex-1 border-b border-white/5 relative bg-[#050505]">
+            <TradingViewChart currentPrice={currentPrice} />
+            <div className="absolute top-4 left-4 z-10 pointer-events-none">
+              <span className="bg-white/10 backdrop-blur px-2 py-1 rounded text-xs font-mono text-gray-400 border border-white/5 shadow-lg flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> CANLI VERİ BAĞLANTISI (BINANCE API)
+              </span>
+            </div>
+          </div>
           
-          {/* Order Entry Form */}
-          <div className="p-4 border-b border-white/5 bg-[#050505]">
-            <div className="flex bg-white/5 rounded-lg p-1 mb-4">
-              <button 
-                onClick={() => setOrderType("BUY")}
-                className={`flex-1 py-2 text-sm font-black rounded-md transition-all ${orderType === 'BUY' ? 'bg-[#16a34a] text-black shadow-[0_0_15px_rgba(22,163,74,0.3)]' : 'text-gray-400 hover:text-white'}`}
-              >
-                AL (LONG)
-              </button>
-              <button 
-                onClick={() => setOrderType("SELL")}
-                className={`flex-1 py-2 text-sm font-black rounded-md transition-all ${orderType === 'SELL' ? 'bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.3)]' : 'text-gray-400 hover:text-white'}`}
-              >
-                SAT (SHORT)
-              </button>
+          <div className="h-64 bg-[#0a0a0a]">
+            <PositionsTable currentPrice={currentPrice} />
+          </div>
+        </div>
+
+        {/* Sağ Panel: İşlem Paneli & Likidasyon */}
+        <div className="w-full lg:w-80 border-l border-white/5 flex flex-col bg-[#0a0a0a] shrink-0">
+          {/* İşlem Formu */}
+          <div className="p-4 border-b border-white/5">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-bold text-sm tracking-widest text-gray-400">İŞLEM AÇ</h3>
+              <button className="text-gray-500 hover:text-white transition-colors"><Settings2 className="w-4 h-4" /></button>
             </div>
 
-            <div className="space-y-3">
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase">Fiyat (USD)</label>
-                <div className="relative mt-1">
-                  <input type="text" value={currentPrice} readOnly className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-white font-mono text-sm focus:outline-none" />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">USD</span>
-                </div>
-              </div>
-              
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase flex justify-between">
-                  <span>Miktar (SOL)</span>
-                  <span className="text-[#16a34a]">Max: 24.5 SOL</span>
-                </label>
-                <div className="relative mt-1">
-                  <input type="number" placeholder="0.00" className="w-full bg-white/5 border border-white/10 focus:border-[#16a34a] rounded-lg py-2.5 px-3 text-white font-mono text-sm focus:outline-none transition-colors" />
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
-                    <button className="bg-white/10 hover:bg-white/20 text-xs font-bold px-2 py-0.5 rounded text-gray-300">YARISI</button>
-                    <button className="bg-white/10 hover:bg-white/20 text-xs font-bold px-2 py-0.5 rounded text-gray-300">MAX</button>
-                  </div>
-                </div>
-              </div>
+            <div className="flex gap-2 mb-6">
+              <button className="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-2 rounded transition-colors text-xs border border-white/5">Limit</button>
+              <button className="flex-1 bg-[#16a34a] text-black font-bold py-2 rounded transition-colors text-xs shadow-[0_0_15px_rgba(22,163,74,0.3)] border border-[#16a34a]">Piyasa</button>
+              <button className="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-2 rounded transition-colors text-xs border border-white/5">Stop</button>
+            </div>
 
-              {/* Leverage Slider Mock */}
-              <div className="pt-2">
-                <div className="flex justify-between text-[10px] font-bold text-gray-500 uppercase mb-2">
-                  <span>Kaldıraç</span>
-                  <span className="text-white">10x</span>
-                </div>
-                <input type="range" min="1" max="100" defaultValue="10" className="w-full accent-[#16a34a] h-1 bg-white/10 rounded-lg appearance-none cursor-pointer" />
-                <div className="flex justify-between text-[10px] text-gray-600 mt-1 font-mono">
-                  <span>1x</span>
-                  <span>50x</span>
-                  <span>100x</span>
+            {/* Kaldıraç Slider */}
+            <div className="mb-6">
+              <div className="flex justify-between text-xs font-bold text-gray-400 mb-2">
+                <span>Kaldıraç</span>
+                <span className="text-white bg-white/10 px-2 py-0.5 rounded">{leverage}x</span>
+              </div>
+              <input 
+                type="range" 
+                min="1" 
+                max="100" 
+                value={leverage} 
+                onChange={(e) => setLeverage(parseInt(e.target.value))}
+                className="w-full accent-[#16a34a] h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer"
+              />
+              <div className="flex justify-between text-[10px] text-gray-600 mt-1 font-mono">
+                <span>1x</span><span>25x</span><span>50x</span><span>75x</span><span>100x</span>
+              </div>
+            </div>
+
+            {/* Miktar */}
+            <div className="mb-6">
+              <div className="flex justify-between text-xs font-bold text-gray-400 mb-2">
+                <span>Miktar</span>
+                <span className="flex items-center gap-1 text-[#16a34a]">
+                  <Wallet className="w-3 h-3" /> ${balance.toFixed(2)}
+                </span>
+              </div>
+              <div className="relative">
+                <input 
+                  type="number" 
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full bg-[#050505] border border-white/10 rounded-lg p-3 pr-16 text-white text-right font-mono focus:outline-none focus:border-[#16a34a] transition-colors"
+                />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-xs">SOL</span>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1">
+                  <button onClick={() => setAmount((balance/2).toFixed(2))} className="text-[10px] bg-white/10 px-1.5 py-1 rounded text-white hover:bg-white/20">50%</button>
+                  <button onClick={() => setAmount(balance.toFixed(2))} className="text-[10px] bg-white/10 px-1.5 py-1 rounded text-white hover:bg-white/20">MAX</button>
                 </div>
               </div>
+            </div>
 
-              <button className={`w-full py-3.5 rounded-lg font-black text-sm uppercase tracking-widest mt-4 transition-all ${orderType === 'BUY' ? 'bg-[#16a34a] hover:bg-[#15803d] text-black shadow-[0_0_20px_rgba(22,163,74,0.4)]' : 'bg-red-500 hover:bg-red-600 text-white shadow-[0_0_20px_rgba(239,68,68,0.4)]'}`}>
-                {orderType === 'BUY' ? 'LONG POZİSYON AÇ' : 'SHORT POZİSYON AÇ'}
+            {/* Butonlar */}
+            <div className="flex gap-2">
+              <button 
+                onClick={() => handleTrade('LONG')}
+                disabled={isSubmitting || !session}
+                className="flex-1 bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-black py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:shadow-[0_0_30px_rgba(34,197,94,0.5)] transform hover:-translate-y-0.5 active:translate-y-0"
+              >
+                LONG<br/><span className="text-[10px] opacity-70 block -mt-1 font-mono">{currentPrice ? `$${currentPrice}` : 'Yükleniyor'}</span>
+              </button>
+              <button 
+                onClick={() => handleTrade('SHORT')}
+                disabled={isSubmitting || !session}
+                className="flex-1 bg-red-500 hover:bg-red-400 disabled:opacity-50 text-white font-black py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(239,68,68,0.3)] hover:shadow-[0_0_30px_rgba(239,68,68,0.5)] transform hover:-translate-y-0.5 active:translate-y-0"
+              >
+                SHORT<br/><span className="text-[10px] opacity-70 block -mt-1 font-mono">{currentPrice ? `$${currentPrice}` : 'Yükleniyor'}</span>
               </button>
             </div>
+            
+            {!session && (
+              <p className="text-center text-xs text-red-500 mt-4 font-bold border border-red-500/20 bg-red-500/5 p-2 rounded">İşlem yapmak için giriş yapmalısınız.</p>
+            )}
           </div>
 
-          {/* OrderBook Section */}
-          <div className="flex-1 flex flex-col p-2 min-h-0">
-             <div className="flex items-center gap-2 mb-2 px-2 text-[10px] font-black text-gray-500 uppercase tracking-widest">
-               <Activity className="w-3 h-3" /> Emir Defteri
-             </div>
-             <div className="flex-1 overflow-hidden">
-               <OrderBook currentPrice={currentPrice} />
-             </div>
+          <div className="flex-1 overflow-hidden bg-[#050505]">
+            <LiquidationFeed />
           </div>
-
         </div>
       </div>
     </div>
