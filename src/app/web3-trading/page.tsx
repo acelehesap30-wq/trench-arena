@@ -3,7 +3,7 @@
 import { Activity, ShieldAlert, ArrowUpRight, ArrowDownRight, Settings2, Wallet } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
-import usePythPrice from '@/hooks/usePythPrice';
+import { usePythPrice } from '@/hooks/usePythPrice';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
@@ -16,7 +16,7 @@ const PositionsTable = dynamic(() => import('@/components/PositionsTable'), { ss
 const LiquidationFeed = dynamic(() => import('@/components/LiquidationFeed'), { ssr: false });
 
 export default function Web3TradingPage() {
-  const { currentPrice, priceChange, loading: pythLoading } = usePythPrice();
+  const { price: currentPrice, trend: priceChange } = usePythPrice();
   const { session, balance } = useAuth();
   
   const [leverage, setLeverage] = useState(10);
