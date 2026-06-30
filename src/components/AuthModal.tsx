@@ -65,7 +65,7 @@ export default function AuthModal({ isOpen, onClose, type }: AuthModalProps) {
 
         <motion.div 
           initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-          className="relative bg-[#1a1c23] border border-white/10 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl"
+          className="relative bg-[#1a1c23] border border-white/10 rounded-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl"
         >
           <div className="flex justify-between items-center p-4 border-b border-white/5 bg-[#14151a]">
             <h2 className="text-white font-bold tracking-wide">{isLogin ? "GİRİŞ YAP" : "KAYIT OL"}</h2>

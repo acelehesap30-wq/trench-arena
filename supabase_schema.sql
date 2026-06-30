@@ -4,6 +4,16 @@
 -- Bu SQL'i Supabase Dashboard > SQL Editor'da çalıştırın
 -- ============================================================
 
+-- Eski tablo yapılarıyla (özellikle Integer/UUID uyuşmazlığı) çakışmayı önlemek için tabloları sıfırla:
+DROP TABLE IF EXISTS public.tournament_entries CASCADE;
+DROP TABLE IF EXISTS public.tournaments CASCADE;
+DROP TABLE IF EXISTS public.sport_bets CASCADE;
+DROP TABLE IF EXISTS public.trading_positions CASCADE;
+DROP TABLE IF EXISTS public.game_history CASCADE;
+DROP TABLE IF EXISTS public.chat_messages CASCADE;
+DROP TABLE IF EXISTS public.casino_games CASCADE;
+-- Profiles tablosunu bilerek silmiyoruz ki mevcut kayıtlı kullanıcıların auth verileri bozulmasın.
+
 -- ============================================================
 -- 1. PROFILES (Kullanıcı Profilleri)
 -- ============================================================

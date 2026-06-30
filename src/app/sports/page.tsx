@@ -7,15 +7,16 @@ import { useBet } from "@/contexts/BetContext";
 import { useAuth } from "@/contexts/AuthContext";
 import toast from "react-hot-toast";
 
-// ESPN API Endpoints
+// ESPN API Endpoints (Soccer)
 const ESPN_SPORTS = [
-  { id: 'football', name: 'Amerikan Futbolu (NFL)', url: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard' },
-  { id: 'basketball', name: 'Basketbol (NBA)', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard' },
-  { id: 'soccer', name: 'Futbol', url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard' }, // Premier League as default
+  { id: 'super-lig', name: 'Trendyol Süper Lig', url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/tur.1/scoreboard' },
+  { id: 'champions-league', name: 'Şampiyonlar Ligi', url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard' },
+  { id: 'premier-league', name: 'Premier League', url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard' },
+  { id: 'la-liga', name: 'La Liga', url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard' },
 ];
 
 export default function SportsPage() {
-  const [activeSport, setActiveSport] = useState(ESPN_SPORTS[1]); // Default NBA
+  const [activeSport, setActiveSport] = useState(ESPN_SPORTS[0]); // Default Super Lig
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { selections, addSelection, removeSelection, clearSelections } = useBet();
@@ -133,7 +134,7 @@ export default function SportsPage() {
         {/* Left Sidebar - Sports */}
         <aside className="w-64 hidden xl:block shrink-0">
           <div className="bg-[#0a0a0a] border border-white/5 rounded-2xl p-4 sticky top-28">
-            <h3 className="text-xs font-black text-gray-600 uppercase tracking-widest mb-4 pl-2">Kategoriler (ESPN)</h3>
+            <h3 className="text-xs font-black text-gray-600 uppercase tracking-widest mb-4 pl-2">Kategoriler</h3>
             <ul className="space-y-1">
               {ESPN_SPORTS.map((sport) => (
                 <li key={sport.id}>
@@ -160,7 +161,7 @@ export default function SportsPage() {
               <h1 className="text-3xl font-black text-white flex items-center gap-3">
                 <Trophy className="w-8 h-8 text-[#16a34a]" /> {activeSport.name}
               </h1>
-              <p className="text-gray-400 text-sm mt-1 font-medium">ESPN API üzerinden canlı veriler (Oranlar demo amaçlıdır)</p>
+              <p className="text-gray-400 text-sm mt-1 font-medium">Uluslararası canlı spor veri sağlayıcısı üzerinden çekilmektedir (İddaa formatında).</p>
             </div>
             <div className="flex items-center gap-4 hidden sm:flex">
               <div className="relative">
@@ -176,7 +177,7 @@ export default function SportsPage() {
 
           <div className="space-y-4">
             {loading ? (
-              <div className="py-20 text-center font-mono text-gray-500">ESPN'DEN VERİLER ÇEKİLİYOR...</div>
+              <div className="py-20 text-center font-mono text-gray-500">CANLI VERİLER ÇEKİLİYOR...</div>
             ) : matches.length === 0 ? (
               <div className="py-20 text-center bg-[#0a0a0a] rounded-2xl border border-white/5 text-gray-500 font-bold">
                 Şu anda bu kategoride aktif veya yaklaşan maç bulunmuyor.
