@@ -43,12 +43,30 @@ export default function AuthModal({ isOpen, onClose, type }: AuthModalProps) {
         window.location.reload();
       } else {
         const { error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
-        alert("Kayıt Başarılı! E-postanızı onaylayın veya direkt giriş yapın.");
-        setIsLogin(true);
+        if (error) {
+          if (error.message.includes('rate limit')) {
+            throw new Error("Çok fazla kayıt isteği yapıldı. Lütfen daha sonra tekrar deneyin veya direkt giriş yapmayı deneyin.");
+          }
+          throw new Error("Kayıt sırasında bir hata oluştu: " + error.message);
+        }
+        
+        // Try to sign in immediately
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (!signInError) {
+          alert("Kayıt ve giriş başarılı!");
+          onClose();
+          window.location.reload();
+        } else {
+          alert("Kayıt Başarılı! Lütfen e-postanızı onaylayıp giriş yapın.");
+          setIsLogin(true);
+        }
       }
     } catch (err: any) {
-      setError(err.message || "Bir hata oluştu.");
+      if (err.message && err.message.includes("Invalid login credentials")) {
+        setError("Geçersiz e-posta veya şifre.");
+      } else {
+        setError(err.message || "Beklenmeyen bir hata oluştu.");
+      }
     } finally {
       setLoading(false);
     }

@@ -4,22 +4,52 @@ import { ArrowLeft, Maximize, RefreshCcw, User, Activity, History, ChevronUp, Al
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function GameLauncher() {
   const params = useParams();
   const gameId = params.id as string;
-  const [balance, setBalance] = useState("1450.00");
+  const { session, balance: realBalance } = useAuth();
+  
+  const [balance, setBalance] = useState("0.00");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isRealMoney, setIsRealMoney] = useState(true);
-  const [showHistory, setShowHistory] = useState(false);
 
-  // Mock Game URLs
-  const getGameUrl = () => {
-    if (gameId === "gates-of-olympus") {
-      return "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20olympgate&lang=tr&cur=USD";
-    } else if (gameId === "sweet-bonanza") {
-      return "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20fruitsw&lang=tr&cur=USD";
+  useEffect(() => {
+    if (isRealMoney) {
+      setBalance(realBalance.toFixed(2));
+    } else {
+      setBalance("100000.00"); // Demo balance
     }
+  }, [isRealMoney, realBalance]);
+
+  // Pragmatic Play / Evolution Game Mappings
+  const getGameUrl = () => {
+    const pragmaticMap: Record<string, string> = {
+      "sweet-bonanza": "vs20fruitsw",
+      "gates-of-olympus": "vs20olympgate",
+      "sugar-rush": "vs20sugarrush",
+      "the-dog-house": "vs20doghouse",
+      "wolf-gold": "vs25wolfgold",
+      "big-bass-bonanza": "vs10bbbonanza",
+      "starlight-princess": "vs20starlight",
+      "fruit-party": "vs20fruitparty",
+      "gems-bonanza": "vs20goldfever",
+      "madame-destiny": "vswaysmadame",
+      "wild-west-gold": "vs40wildwest",
+      "buffalo-king": "vswaysbufking",
+      "mega-roulette": "712",
+      "sweet-bonanza-candyland": "801",
+      "one-blackjack": "104",
+      "speed-baccarat": "401",
+      "mega-wheel": "801"
+    };
+
+    if (pragmaticMap[gameId]) {
+      return `https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=${pragmaticMap[gameId]}&lang=tr&cur=USD`;
+    }
+    
+    // For non-Pragmatic games, we show a mock UI or default to a popular game
     return "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20olympgate&lang=tr&cur=USD";
   };
 
@@ -78,9 +108,9 @@ export default function GameLauncher() {
             <span className="text-sm font-black text-[#16a34a]">${balance}</span>
           </div>
           
-          <button className="w-10 h-10 bg-white/5 border border-white/10 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors">
+          <Link href="/profile" className="w-10 h-10 bg-white/5 border border-white/10 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors">
             <User className="w-5 h-5 text-gray-300" />
-          </button>
+          </Link>
         </div>
       </div>
 

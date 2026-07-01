@@ -17,16 +17,33 @@ export default function Home() {
   
   useEffect(() => {
     const FALLBACK_GAMES = [
+      // Trench Originals
       { id: 'fb-1', title: 'Deep Needle', slug: 'deep-needle', provider: 'TRENCH Originals', category: 'WEB3', image_url: 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?q=80&w=600', players_count: 4200, is_hot: true, is_featured: true, sort_order: 1 },
       { id: 'fb-2', title: 'Trench Crash', slug: 'crash', provider: 'TRENCH Originals', category: 'CRASH', image_url: 'https://images.unsplash.com/photo-1639762681485-074b7f4ec139?q=80&w=600', players_count: 9850, is_hot: true, is_featured: true, sort_order: 3 },
+      { id: 'fb-10', title: 'Dead Cat Bounce', slug: 'dead-cat-bounce', provider: 'TRENCH Originals', category: 'WEB3', image_url: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=600', players_count: 2100, is_hot: false, is_featured: true, sort_order: 2 },
+      
+      // Slots - Pragmatic Play
       { id: 'fb-3', title: 'Sweet Bonanza', slug: 'sweet-bonanza', provider: 'Pragmatic Play', category: 'SLOT', image_url: 'https://images.unsplash.com/photo-1518972559570-7cc1309f3229?q=80&w=600', players_count: 3400, is_hot: true, is_featured: true, sort_order: 10 },
       { id: 'fb-4', title: 'Gates of Olympus', slug: 'gates-of-olympus', provider: 'Pragmatic Play', category: 'SLOT', image_url: 'https://images.unsplash.com/photo-1533558701576-23c65e0272fb?q=80&w=600', players_count: 4100, is_hot: true, is_featured: true, sort_order: 11 },
       { id: 'fb-5', title: 'Sugar Rush', slug: 'sugar-rush', provider: 'Pragmatic Play', category: 'SLOT', image_url: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?q=80&w=600', players_count: 1800, is_hot: false, is_featured: false, sort_order: 12 },
-      { id: 'fb-6', title: 'Lightning Roulette', slug: 'lightning-roulette', provider: 'Evolution', category: 'ROULETTE', image_url: 'https://images.unsplash.com/photo-1605901309584-818e25960b8f?q=80&w=600', players_count: 1420, is_hot: true, is_featured: false, sort_order: 20 },
-      { id: 'fb-7', title: 'Crazy Time', slug: 'crazy-time', provider: 'Evolution', category: 'GAME SHOWS', image_url: 'https://images.unsplash.com/photo-1596838132731-3301c3fd4317?q=80&w=600', players_count: 3850, is_hot: true, is_featured: true, sort_order: 21 },
-      { id: 'fb-8', title: 'Aviator', slug: 'aviator', provider: 'Spribe', category: 'CRASH', image_url: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=600', players_count: 6200, is_hot: true, is_featured: true, sort_order: 30 },
-      { id: 'fb-9', title: 'Infinite Blackjack', slug: 'infinite-blackjack', provider: 'Evolution', category: 'BLACKJACK', image_url: 'https://images.unsplash.com/photo-1511516805178-06bbddab960e?q=80&w=600', players_count: 850, is_hot: false, is_featured: false, sort_order: 22 },
-      { id: 'fb-10', title: 'Dead Cat Bounce', slug: 'dead-cat-bounce', provider: 'TRENCH Originals', category: 'WEB3', image_url: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=600', players_count: 2100, is_hot: false, is_featured: true, sort_order: 2 },
+      { id: 'fb-11', title: 'The Dog House', slug: 'the-dog-house', provider: 'Pragmatic Play', category: 'SLOT', image_url: 'https://images.unsplash.com/photo-1544568100-847a948585b9?q=80&w=600', players_count: 2500, is_hot: true, is_featured: true, sort_order: 13 },
+      { id: 'fb-12', title: 'Wolf Gold', slug: 'wolf-gold', provider: 'Pragmatic Play', category: 'SLOT', image_url: 'https://images.unsplash.com/photo-1590422749906-89685b504246?q=80&w=600', players_count: 3100, is_hot: false, is_featured: true, sort_order: 14 },
+      { id: 'fb-13', title: 'Big Bass Bonanza', slug: 'big-bass-bonanza', provider: 'Pragmatic Play', category: 'SLOT', image_url: 'https://images.unsplash.com/photo-1524748969064-cf3d1441060f?q=80&w=600', players_count: 4500, is_hot: true, is_featured: true, sort_order: 15 },
+      { id: 'fb-14', title: 'Starlight Princess', slug: 'starlight-princess', provider: 'Pragmatic Play', category: 'SLOT', image_url: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=600', players_count: 2800, is_hot: true, is_featured: false, sort_order: 16 },
+      { id: 'fb-15', title: 'Fruit Party', slug: 'fruit-party', provider: 'Pragmatic Play', category: 'SLOT', image_url: 'https://images.unsplash.com/photo-1490818387583-1baba5e638ce?q=80&w=600', players_count: 1900, is_hot: false, is_featured: false, sort_order: 17 },
+      { id: 'fb-16', title: 'Gems Bonanza', slug: 'gems-bonanza', provider: 'Pragmatic Play', category: 'SLOT', image_url: 'https://images.unsplash.com/photo-1515405295579-ba7b45403062?q=80&w=600', players_count: 1500, is_hot: false, is_featured: false, sort_order: 18 },
+      { id: 'fb-17', title: 'Madame Destiny Megaways', slug: 'madame-destiny', provider: 'Pragmatic Play', category: 'SLOT', image_url: 'https://images.unsplash.com/photo-1528642474498-1af0c17fd8c3?q=80&w=600', players_count: 2200, is_hot: true, is_featured: false, sort_order: 19 },
+      { id: 'fb-18', title: 'Wild West Gold', slug: 'wild-west-gold', provider: 'Pragmatic Play', category: 'SLOT', image_url: 'https://images.unsplash.com/photo-1542281286-9e0a16bb7366?q=80&w=600', players_count: 1700, is_hot: false, is_featured: false, sort_order: 20 },
+      { id: 'fb-19', title: 'Buffalo King Megaways', slug: 'buffalo-king', provider: 'Pragmatic Play', category: 'SLOT', image_url: 'https://images.unsplash.com/photo-1501705388883-4ed8a543392c?q=80&w=600', players_count: 2600, is_hot: true, is_featured: false, sort_order: 21 },
+      
+      // Live / Evolution
+      { id: 'fb-6', title: 'Lightning Roulette', slug: 'lightning-roulette', provider: 'Evolution', category: 'ROULETTE', image_url: 'https://images.unsplash.com/photo-1605901309584-818e25960b8f?q=80&w=600', players_count: 1420, is_hot: true, is_featured: false, sort_order: 30 },
+      { id: 'fb-7', title: 'Crazy Time', slug: 'crazy-time', provider: 'Evolution', category: 'GAME SHOWS', image_url: 'https://images.unsplash.com/photo-1596838132731-3301c3fd4317?q=80&w=600', players_count: 3850, is_hot: true, is_featured: true, sort_order: 31 },
+      { id: 'fb-9', title: 'Infinite Blackjack', slug: 'infinite-blackjack', provider: 'Evolution', category: 'BLACKJACK', image_url: 'https://images.unsplash.com/photo-1511516805178-06bbddab960e?q=80&w=600', players_count: 850, is_hot: false, is_featured: false, sort_order: 32 },
+      { id: 'fb-20', title: 'Monopoly Live', slug: 'monopoly-live', provider: 'Evolution', category: 'GAME SHOWS', image_url: 'https://images.unsplash.com/photo-1606167668584-78701c57f13d?q=80&w=600', players_count: 2800, is_hot: true, is_featured: true, sort_order: 33 },
+
+      // Crash / Others
+      { id: 'fb-8', title: 'Aviator', slug: 'aviator', provider: 'Spribe', category: 'CRASH', image_url: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=600', players_count: 6200, is_hot: true, is_featured: true, sort_order: 40 },
     ];
 
     const fetchHomeData = async () => {

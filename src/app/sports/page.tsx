@@ -9,6 +9,13 @@ import toast from "react-hot-toast";
 
 // Iddaa-style league categories
 const LEAGUES = [
+  { id: 'nba', name: 'NBA', flag: '🏀', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard' },
+  { id: 'wnba', name: 'WNBA', flag: '🏀', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard' },
+  { id: 'mlb', name: 'MLB', flag: '⚾', url: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard' },
+  { id: 'nfl', name: 'NFL', flag: '🏈', url: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard' },
+  { id: 'nhl', name: 'NHL', flag: '🏒', url: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard' },
+  { id: 'mma', name: 'UFC/MMA', flag: '🥊', url: 'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard' },
+  { id: 'atp', name: 'Tennis ATP', flag: '🎾', url: 'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard' },
   { id: 'super-lig', name: 'Süper Lig', flag: '🇹🇷', url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/tur.1/scoreboard' },
   { id: '1-lig', name: '1. Lig', flag: '🇹🇷', url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/tur.2/scoreboard' },
   { id: 'champions-league', name: 'Şampiyonlar Ligi', flag: '🏆', url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard' },
