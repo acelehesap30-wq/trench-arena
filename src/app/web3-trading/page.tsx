@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
 // Dinamik yüklenen bileşenler (SSR hatası vermemesi için)
 const TradingViewChart = dynamic(() => import('@/components/TradingViewChart'), { ssr: false });
@@ -254,9 +255,9 @@ export default function Web3TradingPage() {
 
           <div className="flex-1 overflow-hidden bg-[#050505]">
             <LiquidationFeed />
-          </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

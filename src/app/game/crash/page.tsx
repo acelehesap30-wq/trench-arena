@@ -6,6 +6,8 @@ import { motion } from "framer-motion";
 import { ShieldAlert, ArrowLeft, Rocket } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 type GameState = "IDLE" | "BETTING" | "RUNNING" | "CRASHED";
 
@@ -285,6 +287,7 @@ export default function CrashGame() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

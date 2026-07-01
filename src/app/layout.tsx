@@ -7,14 +7,16 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Web3AuthSync from "@/components/Web3AuthSync";
 import BetSlipDrawer from "@/components/BetSlipDrawer";
 import GlobalChat from "@/components/GlobalChat";
+import CryptoTicker from "@/components/CryptoTicker";
 
 import { BetProvider } from "@/contexts/BetContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "TRENCH | Web3 Sentetik Piyasa Arenası",
-  description: "Diamond Hands için Provably Fair Strateji Ekosistemi",
+  title: "TRENCHBET | Global Casino & Sports Betting Platform",
+  description: "Kripto ile bahis, canlı casino, spor bahisleri, Web3 trading ve prediction markets. Provably fair teknolojisi ile güvenli platform.",
+  keywords: "casino, spor bahisleri, kripto, web3, canlı casino, prediction markets, trading",
 };
 
 export default function RootLayout({
@@ -23,8 +25,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} antialiased selection:bg-blue-900 selection:text-white min-h-screen flex flex-col`}>
+    <html lang="tr">
+      <head>
+        <meta name="theme-color" content="#050505" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+      </head>
+      <body className={`${inter.className} antialiased selection:bg-[#16a34a]/30 selection:text-white min-h-screen flex flex-col`}>
         <AuthProvider>
           <WalletContextProvider>
             <BetProvider>
@@ -32,6 +38,7 @@ export default function RootLayout({
               <Web3AuthSync />
               <GlobalChat />
               <BetSlipDrawer />
+              <CryptoTicker />
               {children}
             </BetProvider>
           </WalletContextProvider>
