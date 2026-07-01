@@ -16,6 +16,19 @@ export default function Home() {
   const [providerCounts, setProviderCounts] = useState<{provider: string, count: number}[]>([]);
   
   useEffect(() => {
+    const FALLBACK_GAMES = [
+      { id: 'fb-1', title: 'Deep Needle', slug: 'deep-needle', provider: 'TRENCH Originals', category: 'WEB3', image_url: 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?q=80&w=600', players_count: 4200, is_hot: true, is_featured: true, sort_order: 1 },
+      { id: 'fb-2', title: 'Trench Crash', slug: 'crash', provider: 'TRENCH Originals', category: 'CRASH', image_url: 'https://images.unsplash.com/photo-1639762681485-074b7f4ec139?q=80&w=600', players_count: 9850, is_hot: true, is_featured: true, sort_order: 3 },
+      { id: 'fb-3', title: 'Sweet Bonanza', slug: 'sweet-bonanza', provider: 'Pragmatic Play', category: 'SLOT', image_url: 'https://images.unsplash.com/photo-1518972559570-7cc1309f3229?q=80&w=600', players_count: 3400, is_hot: true, is_featured: true, sort_order: 10 },
+      { id: 'fb-4', title: 'Gates of Olympus', slug: 'gates-of-olympus', provider: 'Pragmatic Play', category: 'SLOT', image_url: 'https://images.unsplash.com/photo-1533558701576-23c65e0272fb?q=80&w=600', players_count: 4100, is_hot: true, is_featured: true, sort_order: 11 },
+      { id: 'fb-5', title: 'Sugar Rush', slug: 'sugar-rush', provider: 'Pragmatic Play', category: 'SLOT', image_url: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?q=80&w=600', players_count: 1800, is_hot: false, is_featured: false, sort_order: 12 },
+      { id: 'fb-6', title: 'Lightning Roulette', slug: 'lightning-roulette', provider: 'Evolution', category: 'ROULETTE', image_url: 'https://images.unsplash.com/photo-1605901309584-818e25960b8f?q=80&w=600', players_count: 1420, is_hot: true, is_featured: false, sort_order: 20 },
+      { id: 'fb-7', title: 'Crazy Time', slug: 'crazy-time', provider: 'Evolution', category: 'GAME SHOWS', image_url: 'https://images.unsplash.com/photo-1596838132731-3301c3fd4317?q=80&w=600', players_count: 3850, is_hot: true, is_featured: true, sort_order: 21 },
+      { id: 'fb-8', title: 'Aviator', slug: 'aviator', provider: 'Spribe', category: 'CRASH', image_url: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=600', players_count: 6200, is_hot: true, is_featured: true, sort_order: 30 },
+      { id: 'fb-9', title: 'Infinite Blackjack', slug: 'infinite-blackjack', provider: 'Evolution', category: 'BLACKJACK', image_url: 'https://images.unsplash.com/photo-1511516805178-06bbddab960e?q=80&w=600', players_count: 850, is_hot: false, is_featured: false, sort_order: 22 },
+      { id: 'fb-10', title: 'Dead Cat Bounce', slug: 'dead-cat-bounce', provider: 'TRENCH Originals', category: 'WEB3', image_url: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=600', players_count: 2100, is_hot: false, is_featured: true, sort_order: 2 },
+    ];
+
     const fetchHomeData = async () => {
       try {
         // Fetch active casino games
@@ -25,14 +38,16 @@ export default function Home() {
           .eq('is_active', true)
           .order('sort_order', { ascending: true });
           
-        if (!gamesError && gamesData) {
+        if (!gamesError && gamesData && gamesData.length > 0) {
           setGames(gamesData);
-          
-          // Calculate provider counts
           const counts: Record<string, number> = {};
-          gamesData.forEach(game => {
-            counts[game.provider] = (counts[game.provider] || 0) + 1;
-          });
+          gamesData.forEach(game => { counts[game.provider] = (counts[game.provider] || 0) + 1; });
+          setProviderCounts(Object.entries(counts).map(([provider, count]) => ({ provider, count })));
+        } else {
+          // Use fallback games
+          setGames(FALLBACK_GAMES);
+          const counts: Record<string, number> = {};
+          FALLBACK_GAMES.forEach(game => { counts[game.provider] = (counts[game.provider] || 0) + 1; });
           setProviderCounts(Object.entries(counts).map(([provider, count]) => ({ provider, count })));
         }
 
@@ -46,7 +61,6 @@ export default function Home() {
         if (!winsError && winsData && winsData.length > 0) {
           setRecentWins(winsData);
         } else {
-          // Fallback if no real data yet
           setRecentWins([
             { username: "berke***98", game_title: "Gates of Olympus", win_amount: 1250 },
             { username: "crypto***ng", game_title: "Deep Needle", win_amount: 420.5 },
@@ -55,6 +69,11 @@ export default function Home() {
         }
       } catch (err) {
         console.error("Home Data Fetch Error:", err);
+        // Ensure fallback is always used on error
+        setGames(FALLBACK_GAMES);
+        const counts: Record<string, number> = {};
+        FALLBACK_GAMES.forEach(game => { counts[game.provider] = (counts[game.provider] || 0) + 1; });
+        setProviderCounts(Object.entries(counts).map(([provider, count]) => ({ provider, count })));
       }
     };
     

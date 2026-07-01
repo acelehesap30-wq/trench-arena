@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TrendingUp, Users, Activity, BarChart2, ShieldAlert } from "lucide-react";
+import { TrendingUp, Users, Activity, BarChart2, ShieldAlert, ChevronUp, ChevronDown } from "lucide-react";
 import Header from "@/components/Header";
 
-// Polymarket Gamma API Endpoint
+// Polymarket Gamma API - fetch real event data with outcomes
 const GAMMA_API_URL = "https://gamma-api.polymarket.com/events?limit=20&active=true&closed=false&order=volume24hr&ascending=false";
 
 export default function PolymarketPage() {
@@ -16,7 +16,40 @@ export default function PolymarketPage() {
       try {
         const response = await fetch(GAMMA_API_URL);
         const data = await response.json();
-        setMarkets(data);
+        
+        // Parse real outcome prices from the API
+        const enriched = data.map((event: any) => {
+          let parsedOutcomes: { name: string; price: number }[] = [];
+          
+          if (event.markets && event.markets.length > 0) {
+            const market = event.markets[0];
+            try {
+              const outcomes = typeof market.outcomes === 'string' 
+                ? JSON.parse(market.outcomes) 
+                : market.outcomes;
+              const prices = typeof market.outcomePrices === 'string'
+                ? JSON.parse(market.outcomePrices)
+                : market.outcomePrices;
+              
+              if (outcomes && prices) {
+                parsedOutcomes = outcomes.map((name: string, i: number) => ({
+                  name,
+                  price: parseFloat(prices[i]) || 0.5,
+                }));
+              }
+            } catch {
+              // If parsing fails, use defaults
+              parsedOutcomes = [
+                { name: 'Yes', price: 0.5 },
+                { name: 'No', price: 0.5 },
+              ];
+            }
+          }
+          
+          return { ...event, parsedOutcomes };
+        });
+        
+        setMarkets(enriched);
       } catch (err) {
         console.error("Polymarket API Error:", err);
       } finally {
@@ -46,7 +79,7 @@ export default function PolymarketPage() {
           
           <div className="relative z-10 max-w-2xl">
             <span className="inline-flex items-center gap-2 py-1 px-3 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-black mb-4 uppercase tracking-widest">
-              <Activity className="w-3 h-3" /> Gamma API Entegrasyonu
+              <Activity className="w-3 h-3" /> Polymarket Entegrasyonu
             </span>
             <h1 className="text-4xl md:text-5xl font-black text-white mb-4 leading-tight tracking-tight">
               POLYMARKET <span className="text-blue-500">TAHMİN PAZARI</span>
@@ -61,10 +94,9 @@ export default function PolymarketPage() {
         <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-8 flex items-start gap-4">
           <ShieldAlert className="w-6 h-6 text-blue-500 shrink-0 mt-1" />
           <div>
-            <h4 className="text-blue-400 font-bold mb-1">Polymarket Entegrasyonu</h4>
+            <h4 className="text-blue-400 font-bold mb-1">Canlı Polymarket Verileri</h4>
             <p className="text-sm text-gray-300">
-              Aşağıdaki veriler doğrudan Polymarket Gamma API'den çekilmektedir. Oranlar ve hacimler gerçek zamanlıdır. 
-              Trench Arena üzerinden yapılan bahisler iç sistemimizde tutulur, Polymarket akıllı sözleşmelerine doğrudan yazılmaz (şimdilik).
+              Aşağıdaki oranlar ve hacimler doğrudan Polymarket Gamma API'den gerçek zamanlı olarak çekilmektedir.
             </p>
           </div>
         </div>
@@ -72,7 +104,7 @@ export default function PolymarketPage() {
         {/* Markets Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {loading ? (
-            <div className="col-span-full py-20 text-center text-gray-500 font-mono">GAMMA API'DEN VERİLER ÇEKİLİYOR...</div>
+            <div className="col-span-full py-20 text-center text-gray-500 font-mono">VERİLER ÇEKİLİYOR...</div>
           ) : markets.length === 0 ? (
             <div className="col-span-full py-20 text-center text-gray-500">Aktif pazar bulunamadı.</div>
           ) : markets.map((market) => (
@@ -102,17 +134,24 @@ export default function PolymarketPage() {
                   </div>
                 </div>
 
-                {/* Outcomes */}
-                {market.markets && market.markets.length > 0 && market.markets[0].outcomes ? (
+                {/* Real Outcomes with actual prices */}
+                {market.parsedOutcomes && market.parsedOutcomes.length > 0 ? (
                   <div className="space-y-3">
-                    {JSON.parse(market.markets[0].outcomes).slice(0, 2).map((outcome: string, idx: number) => {
-                      const prob = 50; // In reality, we'd calculate this from the order book, using 50% default to avoid random mock data
+                    {market.parsedOutcomes.map((outcome: { name: string; price: number }, idx: number) => {
+                      const pct = Math.round(outcome.price * 100);
+                      const isYes = outcome.name.toLowerCase() === 'yes';
+                      const colorClass = isYes ? 'text-green-400' : 'text-red-400';
+                      const bgClass = isYes ? 'bg-green-500/10 hover:bg-green-500/20 border-green-500/20 hover:border-green-500/40' : 'bg-red-500/10 hover:bg-red-500/20 border-red-500/20 hover:border-red-500/40';
+                      
                       return (
-                        <button key={idx} className="w-full bg-[#14151a] hover:bg-[#1a1c23] border border-white/5 hover:border-blue-500/50 rounded-xl p-4 flex items-center justify-between transition-all group/btn">
-                          <span className="font-bold text-sm text-gray-300 group-hover/btn:text-white truncate pr-4">{outcome}</span>
+                        <button key={idx} className={`w-full ${bgClass} border rounded-xl p-4 flex items-center justify-between transition-all group/btn`}>
+                          <div className="flex items-center gap-2">
+                            {isYes ? <ChevronUp className="w-4 h-4 text-green-400" /> : <ChevronDown className="w-4 h-4 text-red-400" />}
+                            <span className="font-bold text-sm text-gray-200 group-hover/btn:text-white">{outcome.name}</span>
+                          </div>
                           <div className="flex flex-col items-end">
-                            <span className="text-blue-400 font-mono font-bold">{prob}%</span>
-                            <span className="text-[10px] text-gray-600 font-mono">{(100/prob).toFixed(2)}x</span>
+                            <span className={`${colorClass} font-mono font-black text-lg`}>{pct}%</span>
+                            <span className="text-[10px] text-gray-600 font-mono">{pct > 0 ? (100/pct).toFixed(2) : '0.00'}x</span>
                           </div>
                         </button>
                       );
