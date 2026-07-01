@@ -255,6 +255,7 @@ export default function Web3TradingPage() {
 
           <div className="flex-1 overflow-hidden bg-[#050505]">
             <LiquidationFeed />
+          </div>
         </div>
       </div>
       <Footer />
