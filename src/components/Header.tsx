@@ -8,6 +8,7 @@ import dynamic from "next/dynamic";
 import DepositModal from "@/components/DepositModal";
 import AuthModal from "@/components/AuthModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 const WalletMultiButtonDynamic = dynamic(
     async () => (await import('@solana/wallet-adapter-react-ui')).WalletMultiButton,
@@ -29,6 +30,7 @@ export default function Header() {
   const [authType, setAuthType] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
   const pathname = usePathname();
   const { session, balance, logout } = useAuth();
+  const { disconnect } = useWallet();
 
   const isActive = (href: string, exact?: boolean) => {
     if (exact) return pathname === href;
@@ -37,6 +39,9 @@ export default function Header() {
 
   const handleLogout = async () => {
     await logout();
+    if (disconnect) {
+      await disconnect();
+    }
   };
 
   return (
